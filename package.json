@@ -1,0 +1,29 @@
+{
+  "name": "webdosa",
+  "version": "1.0.0",
+  "description": "Implementation of DOSA visualization system for the web",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/roozgit/webdosa.git"
+  },
+  "keywords": [
+    "visualization"
+  ],
+  "author": "Roozbeh Khodadadeh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/roozgit/webdosa/issues"
+  },
+  "homepage": "https://github.com/roozgit/webdosa#readme",
+  "dependencies": {
+    "d3-array": "^1.2.4",
+    "d3-axis": "^1.0.12",
+    "d3-fetch": "^1.1.2",
+    "d3-scale": "^2.1.2",
+    "d3-selection": "^1.3.2"
+  }
+}
