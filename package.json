@@ -18,7 +18,7 @@
   "bugs": {
     "url": "https://github.com/roozgit/webdosa/issues"
   },
-  "homepage": "https://github.com/roozgit/webdosa#readme",
+  "homepage": "https://github.com/roozgit/webdosa#README.md",
   "dependencies": {
     "d3-array": "^1.2.4",
     "d3-axis": "^1.0.12",
