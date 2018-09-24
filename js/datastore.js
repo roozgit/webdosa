@@ -1,27 +1,25 @@
 import * as d3fetcher from '../node_modules/d3-fetch/src/index.js';
+import {dataReady} from "./index";
 
 class Datastore {
     constructor(model) {
         this.model = model;
-        this.nodes =[];
-        this.edges =[];
     }
 
-    getData() {
-        if(this.model === "activsg") {
-            d3fetcher.json("/WebDOSA/data/activsg.json").then(rows => {
-                rows.forEach(d => {
-                    if (d.group === "nodes") this.nodes.push(d);
-                    else this.edges.push(d);
+    getEles() {
+        if(!this.nodes || !this.edges) {
+            this.nodes = [];
+            this.edges = [];
+            d3fetcher.json("/WebDOSA/data/activsg.json")
+                .then(rows => {
+                    rows.forEach(d => {
+                        if (d.group === "nodes" && !d.classes.includes("substation")) this.nodes.push(d);
+                        else this.edges.push(d);
+                    });
+                    dataReady({nodes: this.nodes, edges: this.edges});
                 });
-            });
         }
-        return {
-            nodes: this.nodes,
-            edges: this.edges
-        };
     }
-
 }
 
-export default Datastore
+export default Datastore;
