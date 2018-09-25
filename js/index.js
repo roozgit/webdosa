@@ -20,4 +20,10 @@ export function dataReady(graph) {
         {top: 10, right: 20, bottom: 100, left: 10});
 }
 
+export class Mediator {
+    static detailFrameReady() {
+        console.log("box drawn");
+    }
+}
+
 
