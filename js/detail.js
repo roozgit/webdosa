@@ -1,7 +1,7 @@
 import {scaleLinear} from 'd3-scale';
 import {extent} from 'd3-array';
 import {axisBottom, axisLeft} from 'd3-axis';
-import {quadtree as quadtree} from 'd3-quadtree';
+import {quadtree} from 'd3-quadtree';
 //import {brush as d3brush} from 'd3-brush';
 
 //import {Mediator} from "./index";
@@ -93,9 +93,9 @@ class Detail {
             .call(brush)
             .call(brush.move, [[300,300], [420,420]])
 
-        function nodes(quadtree) {
+        function nodes(qtree) {
             var nodes = [];
-            quadtree.visit(function(node, x0, y0, x1, y1) {
+            qtree.visit(function(node, x0, y0, x1, y1) {
                 node.x0 = x0, node.y0 = y0;
                 node.x1 = x1, node.y1 = y1;
                 if(y1 > height) node.y1 = height;
@@ -108,8 +108,8 @@ class Detail {
         }
 
         // Find the nodes within the specified rectangle.
-        function search(points, quadtree, x0, y0, x3, y3) {
-            quadtree.visit(function(node, x1, y1, x2, y2) {
+        function search(points, qtree, x0, y0, x3, y3) {
+            qtree.visit(function(node, x1, y1, x2, y2) {
                 if (!node.length) {
                     do {
                         let d = node.data;
