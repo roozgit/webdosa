@@ -1,5 +1,6 @@
 import * as d3fetcher from 'd3-fetch';
-import {Mediator} from "./index";
+//import {Mediator} from "./index";
+import {dispatch} from "./index";
 
 class Datastore {
     constructor(model) {
@@ -17,7 +18,7 @@ class Datastore {
                         else this.edges.push(d);
                     });
                     return {nodes: this.nodes, edges: this.edges};
-                }).then(function(graph) {Mediator.publish('dataFromStore', graph)});
+                }).then(function(graph) {dispatch.call('dataLoad', this, graph)});
         }
     }
 }
