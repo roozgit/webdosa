@@ -1,5 +1,5 @@
 import * as d3fetcher from 'd3-fetch';
-import {dataReady} from "./index";
+import {Mediator} from "./index";
 
 class Datastore {
     constructor(model) {
@@ -16,8 +16,8 @@ class Datastore {
                         if (d.group === "nodes" && !d.classes.includes("substation")) this.nodes.push(d);
                         else this.edges.push(d);
                     });
-                    dataReady({nodes: this.nodes, edges: this.edges});
-                });
+                    return {nodes: this.nodes, edges: this.edges};
+                }).then(function(graph) {Mediator.publish('dataFromStore', graph)});
         }
     }
 }

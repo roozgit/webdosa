@@ -10,12 +10,12 @@
     fill: orange;
     fill-opacity: 1;
     stroke: orange;
-    stroke-width: 3px;
+    stroke-width: 1px;
 }
 
 .point--selected {
     fill: red;
     fill-opacity: 1;
     stroke: red;
-    stroke-width: 5px;
+    stroke-width: 1px;
 }

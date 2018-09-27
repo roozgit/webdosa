@@ -1,7 +1,7 @@
 import * as d3selector from '../node_modules/d3-selection/src/index.js';
 
 class Widget {
-    constructor(el, width, height, margin) {
+    constructor(el, graph, width, height, margin) {
         this.svg = d3selector.select(el)
             .append('svg')
             .attr('id', 'svgWidget')
