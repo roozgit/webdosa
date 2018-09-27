@@ -1,4 +1,4 @@
-import * as d3fetcher from '../node_modules/d3-fetch/src/index.js';
+import * as d3fetcher from 'd3-fetch';
 import {dataReady} from "./index";
 
 class Datastore {

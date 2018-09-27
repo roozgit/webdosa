@@ -1,3 +1,21 @@
 .column {
     display: flex;
 }
+.node {
+    fill: none;
+    stroke: #ccc;
+    shape-rendering: crispEdges;
+}
+.point--scanned {
+    fill: orange;
+    fill-opacity: 1;
+    stroke: orange;
+    stroke-width: 3px;
+}
+
+.point--selected {
+    fill: red;
+    fill-opacity: 1;
+    stroke: red;
+    stroke-width: 5px;
+}

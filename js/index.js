@@ -1,7 +1,7 @@
-import DS from './datastore';
-import {Detail} from './detail';
-import {Widget} from './widget';
-import {Aggregation} from './aggregation';
+import DS from './datastore.js';
+import {Detail} from './detail.js';
+import {Widget} from './widget.js';
+import {Aggregation} from './aggregation.js'
 
 let scWidgetWidth = 180;
 let detailWidth = 700;
@@ -20,10 +20,5 @@ export function dataReady(graph) {
         {top: 10, right: 20, bottom: 100, left: 10});
 }
 
-export class Mediator {
-    static detailFrameReady() {
-        console.log("box drawn");
-    }
-}
 
 
