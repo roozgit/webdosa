@@ -1,5 +1,4 @@
 import * as d3fetcher from 'd3-fetch';
-//import {Mediator} from "./index";
 import {dispatch} from "./index";
 
 class Datastore {

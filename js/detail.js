@@ -2,13 +2,12 @@ import {scaleLinear} from 'd3-scale';
 import {extent} from 'd3-array';
 import {axisBottom, axisLeft} from 'd3-axis';
 import {quadtree} from 'd3-quadtree';
-//import {brush as d3brush} from 'd3-brush';
+import d3 from 'd3-selection';
+import {brush as d3brush} from 'd3-brush';
 
-//import {Mediator} from "./index";
 let svg = Symbol();
 let nodeGroup = Symbol();
 let points = Symbol();
-var d3 = window.d3;
 
 class Detail {
     constructor(el, graph, width, height, margin) {
@@ -52,7 +51,7 @@ class Detail {
         let tree = quadtree()
             .x(d => xs(d.position.x))
             .y(d => ys(d.position.y))
-            .addAll(graph.nodes)//.map(n => [xs(n.position.x), ys(n.position.y)]))
+            .addAll(graph.nodes);
 
 
         this[points] = this[nodeGroup].append('g').attr('id', "scatterPlot");
@@ -78,7 +77,7 @@ class Detail {
         let ppoints = this[points];
 
         let bbox = d3.select('#scatterPlot').node().getBBox();
-        let brush = d3.brush()
+        let brush = d3brush()
             .extent([[bbox.x, bbox.y], [bbox.x + bbox.width, bbox.y + bbox.height]])
             .on('brush', function() {
                 let extent = d3.event.selection;
@@ -91,10 +90,10 @@ class Detail {
         this[nodeGroup].append('g')
             .attr('class', "brush")
             .call(brush)
-            .call(brush.move, [[300,300], [420,420]])
+            .call(brush.move, [[300,300], [420,420]]);
 
         function nodes(qtree) {
-            var nodes = [];
+            let nodes = [];
             qtree.visit(function(node, x0, y0, x1, y1) {
                 node.x0 = x0, node.y0 = y0;
                 node.x1 = x1, node.y1 = y1;
