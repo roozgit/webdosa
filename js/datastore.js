@@ -1,5 +1,6 @@
 import * as d3fetcher from 'd3-fetch';
 import {dispatch} from "./index";
+import {HGraph} from "./HGraph";
 
 class Datastore {
     constructor(model) {
@@ -8,16 +9,11 @@ class Datastore {
 
     getEles() {
         if(!this.nodes || !this.edges) {
-            this.nodes = [];
-            this.edges = [];
-            d3fetcher.json("/WebDOSA/data/activsg.json")
-                .then(rows => {
-                    rows.forEach(d => {
-                        if (d.group === "nodes" && !d.classes.includes("substation")) this.nodes.push(d);
-                        else this.edges.push(d);
-                    });
-                    return {nodes: this.nodes, edges: this.edges};
-                }).then(function(graph) {dispatch.call('dataLoad', this, graph)});
+            d3fetcher.json("/WebDOSA/data/activsg4.json")
+                .then(function(graph) {
+                    let hgraph = new HGraph(graph.nodes, graph.edges);
+                    dispatch.call('dataLoad', this, hgraph)
+                });
         }
     }
 }

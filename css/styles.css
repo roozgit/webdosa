@@ -6,12 +6,12 @@
     stroke: #ccc;
     shape-rendering: crispEdges;
 }
-.point--scanned {
-    fill: orange;
-    fill-opacity: 1;
-    stroke: orange;
-    stroke-width: 1px;
-}
+/*.point--scanned {*/
+    /*fill: orange;*/
+    /*fill-opacity: 1;*/
+    /*stroke: orange;*/
+    /*stroke-width: 1px;*/
+/*}*/
 
 .point--selected {
     fill: red;

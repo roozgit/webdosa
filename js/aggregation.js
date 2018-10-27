@@ -10,7 +10,7 @@ class Aggregation {
             .style('border', "1px solid black")
             .append('g')
             .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");;
+                "translate(" + margin.left + "," + margin.top + ")");
     }
 }
 

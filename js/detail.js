@@ -4,6 +4,7 @@ import {axisBottom, axisLeft} from 'd3-axis';
 import {quadtree} from 'd3-quadtree';
 import d3 from 'd3-selection';
 import {brush as d3brush} from 'd3-brush';
+import {dispatch} from "./index";
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -13,6 +14,8 @@ class Detail {
     constructor(el, graph, width, height, margin) {
         let xPos = graph.nodes.map(n => n.position.x);
         let yPos = graph.nodes.map(n => n.position.y);
+        this.selectedNodes = [];
+
         this[svg] = d3.select(el)
             .append('svg')
             .attr('id', "svgDetail")
@@ -81,10 +84,36 @@ class Detail {
             .extent([[bbox.x, bbox.y], [bbox.x + bbox.width, bbox.y + bbox.height]])
             .on('brush', function() {
                 let extent = d3.event.selection;
-                ppoints.each(d => d.scanned = d.selected = false);
+                ppoints.each(d => d.selected = false);
                 search(ppoints, tree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
-                ppoints.classed("point--scanned", function(d) { return d.scanned; });
+                //ppoints.classed("point--scanned", function(d) { return d.scanned; });
                 ppoints.classed("point--selected", function(d) { return d.selected; });
+                let nodeIds = ppoints.filter(d => d.selected).data().map(d => d.data.id);
+                let visible = [...graph.adjList].filter(n => nodeIds.includes(n[0]))
+                    .map(n => [graph.nodeMap.get(n[0]), n[1]]);
+                    // {
+                    //     let sp = graph.nodeMap.get(n[0]).position;
+                    //     return [[sp.x, sp.y], n[1].map(ne=> [ne.position.x, ne.position.y])]
+                    // });
+                //console.log(visible);
+                let visible2=[];
+                for(let ne of visible)
+                    for(let nei of ne[1])
+                        visible2.push([ne[0].position, nei.position]);
+
+                //console.log(visible2);
+                d3.select('#visibleEdges').remove();
+                let visibleEdges =  d3.select('#scatterPlot').append('g')
+                     .attr('id', "visibleEdges")
+                    .selectAll('path')
+                    .data(visible2).enter()
+                    .append('line')
+                    .attr('x1', d => xs(d[0].x))
+                    .attr('y1', d => ys(d[0].y))
+                    .attr('x2', d => xs(d[1].x))
+                    .attr('y2', d => ys(d[1].y))
+                    .attr('stroke', "black");
+                dispatch.call('selectionChanged', this, visible);
             });
 
         this[nodeGroup].append('g')
@@ -113,7 +142,7 @@ class Detail {
                     do {
                         let d = node.data;
                         let dp = [node.data.position.x, node.data.position.y];
-                        d.scanned = true;
+                        //d.scanned = true;
                         d.selected = (xs(dp[0]) >= x0) && (xs(dp[0]) < x3) && (ys(dp[1]) >= y0) && (ys(dp[1]) < y3);
                         //console.log(dp, (x0), (y0))
                         //if(d.selected) console.log(d[0], d[1])
@@ -123,6 +152,10 @@ class Detail {
             });
         }
 
+     }
+
+     selectedNodes() {
+        return this.selectedNodes;
      }
 
 
