@@ -19,3 +19,8 @@
     stroke: blue;
     stroke-width: 1px;
 }
+
+.col2 {
+    display : flex;
+    flex-direction: column;
+}
