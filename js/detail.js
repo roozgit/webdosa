@@ -15,6 +15,9 @@ class Detail {
     constructor(el, graph, width, height, margin) {
         let xPos = graph.nodes.map(n => n.position.x);
         let yPos = graph.nodes.map(n => n.position.y);
+        this.selectionIndex = 0;
+        this.selections = [];
+        this.colors = new Map([[0, "blue"], [1, "red"], [2, "orange"], [3,"green"]]);
         this[svg] = d3.select(el)
             .append('svg')
             .attr('id', "svgDetail")
@@ -83,75 +86,19 @@ class Detail {
         //     .attr('x', d => xs(d.position.x))
         //     .attr('y', d => ys(d.position.y))
         //     .text(d => d.classes.includes("bus") ? d.data.id : "");
-        let ppoints = this[points];
+        //let ppoints = this[points];
 
         let bbox = d3.select('#scatterPlot').node().getBBox();
         let brush = d3brush()
             .extent([[bbox.x, bbox.y], [bbox.x + bbox.width, bbox.y + bbox.height]])
-            .on('brush', function() {
-                let extent = d3.event.selection;
-                ppoints.each(d => d.selected = false);
-                let nodeIds =
-                    new Set([...search(ppoints, tree, extent[0][0], extent[0][1], extent[1][0], extent[1][1])]);
-
-                let visibleFroms = [], visibleTos = [];
-                let drawn = new Set();
-                let inside = new Set();
-                let outside = new Set();
-                //get outgoing and encode the arcs going from right to left
-                for(let fnode of graph.adjList.entries()) {
-                    if (nodeIds.has(fnode[0])) {
-                        let fromNode = graph.nodeMap.get(fnode[0]);
-                        let toNodes = fnode[1];
-                        for(let toNode of toNodes) {
-                            let nume = toNode.via.length;
-                            if(fromNode.position.x !== toNode.to.position.x &&
-                                fromNode.position.y !== toNode.to.position.y) {
-                                visibleFroms.push(Util.arcLinks(xs(fromNode.position.x), ys(fromNode.position.y),
-                                    xs(toNode.to.position.x), ys(toNode.to.position.y), nume, 15));
-                                drawn.add(`${fromNode.data.id}-${toNode.to.data.id}`);
-                            }
-
-                        }
-                    }
-                }
-
-                //get incoming and encode arcs going from left to right
-                for(let tnode of graph.revAdjList.entries()) {
-                    if (nodeIds.has(tnode[0])) {
-                        let toNode = graph.nodeMap.get(tnode[0]);
-                        let fromNodes = tnode[1];
-                        for(let fromNode of fromNodes) {
-                            let nume = fromNode.via.length;
-                            if(toNode.position.x !== fromNode.from.position.x &&
-                                toNode.position.y !== fromNode.from.position.y) {
-                                if(!drawn.has(`${fromNode.from.data.id}-${toNode.data.id}`))
-                                    visibleTos.push(Util.arcLinks(xs(fromNode.from.position.x), ys(fromNode.from.position.y),
-                                        xs(toNode.position.x), ys(toNode.position.y), nume, 15));
-                            }
-                        }
-                    }
-                }
-                visibleFroms = [].concat(...visibleFroms);
-                let allVisible = visibleFroms.concat(...visibleTos);
-
-                d3.select('#visibleEdges').remove();
-                let visibleEdges =  d3.select('#scatterPlot').append('g')
-                     .attr('id', "visibleEdges")
-                    .selectAll('path')
-                    .data(allVisible).enter()
-                    .append('path')
-                    .attr('d', d => d)
-                    .attr('fill', "none")
-                    .attr('stroke', "blue");
-                
-                dispatch.call('selectionChanged', this, nodeIds);
-            });
+            .on('start', brushStart.bind(this))
+            .on('brush', brushed.bind(this))
+            .on('end', emitData.bind(this));
 
         this[nodeGroup].append('g')
             .attr('class', "brush")
-            .call(brush)
-            .call(brush.move, [[300,300], [420,420]]);
+            .call(brush);
+            //.call(brush.move, [[300,300], [420,420]]);
 
         // function nodes(qtree) {
         //     let nodes = [];
@@ -182,6 +129,77 @@ class Detail {
                 return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
             });
             return results;
+        }
+
+        function brushStart() {
+            //this.selection
+            console.log("started");
+        }
+
+        function brushed() {
+            let extent = d3.event.selection;
+            this[points].each(d => d.selected = false);
+            let nodeIds =
+                new Set([...search(this[points], tree, extent[0][0], extent[0][1], extent[1][0], extent[1][1])]);
+
+            let visibleFroms = [], visibleTos = [];
+            let drawn = new Set();
+            let inside = new Set();
+            let outside = new Set();
+            //get outgoing and encode the arcs going from right to left
+            for(let fnode of graph.adjList.entries()) {
+                if (nodeIds.has(fnode[0])) {
+                    let fromNode = graph.nodeMap.get(fnode[0]);
+                    let toNodes = fnode[1];
+                    for(let toNode of toNodes) {
+                        let nume = toNode.via.length;
+                        if(fromNode.position.x !== toNode.to.position.x &&
+                            fromNode.position.y !== toNode.to.position.y) {
+                            visibleFroms.push(Util.arcLinks(xs(fromNode.position.x), ys(fromNode.position.y),
+                                xs(toNode.to.position.x), ys(toNode.to.position.y), nume, 15));
+                            drawn.add(`${fromNode.data.id}-${toNode.to.data.id}`);
+                        }
+
+                    }
+                }
+            }
+
+            //get incoming and encode arcs going from left to right
+            for(let tnode of graph.revAdjList.entries()) {
+                if (nodeIds.has(tnode[0])) {
+                    let toNode = graph.nodeMap.get(tnode[0]);
+                    let fromNodes = tnode[1];
+                    for(let fromNode of fromNodes) {
+                        let nume = fromNode.via.length;
+                        if(toNode.position.x !== fromNode.from.position.x &&
+                            toNode.position.y !== fromNode.from.position.y) {
+                            if(!drawn.has(`${fromNode.from.data.id}-${toNode.data.id}`))
+                                visibleTos.push(Util.arcLinks(xs(fromNode.from.position.x), ys(fromNode.from.position.y),
+                                    xs(toNode.position.x), ys(toNode.position.y), nume, 15));
+                        }
+                    }
+                }
+            }
+            visibleFroms = [].concat(...visibleFroms);
+            let allVisible = visibleFroms.concat(...visibleTos);
+
+            //console.log(this.selections);
+            //d3.select('#visibleEdges').remove();
+            let visibleEdges =  d3.select('#scatterPlot').append('g')
+                .attr('id', "visibleEdges")
+                .selectAll('path')
+                .data(allVisible).enter()
+                .append('path')
+                .attr('d', d => d)
+                .attr('fill', "none")
+                .attr('stroke', this.colors.get(this.selectionIndex));
+            this.selections[this.selectionIndex] = nodeIds;
+            dispatch.call('selectionChanged', this, this.selections);
+        }
+
+        function emitData() {
+            console.log(this.selections)
+            this.selectionIndex = (this.selectionIndex + 1) % 4;
         }
      }
 }
