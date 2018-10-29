@@ -14,8 +14,8 @@
 /*}*/
 
 .point--selected {
-    fill: red;
+    fill: blue;
     fill-opacity: 1;
-    stroke: red;
+    stroke: blue;
     stroke-width: 1px;
 }

@@ -20,7 +20,7 @@ dispatch.on('dataLoad', function(graph) {
 });
 
 dispatch.on('selectionChanged', function(selectedNodes) {
-    console.log(selectedNodes);
+    //console.log(selectedNodes);
 });
 
 export {dispatch};

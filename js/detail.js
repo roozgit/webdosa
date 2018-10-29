@@ -4,7 +4,8 @@ import {axisBottom, axisLeft} from 'd3-axis';
 import {quadtree} from 'd3-quadtree';
 import d3 from 'd3-selection';
 import {brush as d3brush} from 'd3-brush';
-import {dispatch} from "./index";
+import {dispatch} from './index';
+import {Util} from './util';
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -14,8 +15,6 @@ class Detail {
     constructor(el, graph, width, height, margin) {
         let xPos = graph.nodes.map(n => n.position.x);
         let yPos = graph.nodes.map(n => n.position.y);
-        this.selectedNodes = [];
-
         this[svg] = d3.select(el)
             .append('svg')
             .attr('id', "svgDetail")
@@ -59,14 +58,14 @@ class Detail {
 
         this[points] = this[nodeGroup].append('g').attr('id', "scatterPlot");
 
-        this[points].selectAll('.node')
-            .data(nodes(tree))
-            .enter().append('rect')
-            .attr('class', "node")
-            .attr('x', function(d) { return d.x0; })
-            .attr('y', function(d) { return d.y0; })
-            .attr('width', function(d) { return d.x1 - d.x0; })
-            .attr('height', function(d) { return d.y1 - d.y0; });
+        // this[points].selectAll('.node')
+        //     .data(nodes(tree))
+        //     .enter().append('rect')
+        //     .attr('class', "node")
+        //     .attr('x', function(d) { return d.x0; })
+        //     .attr('y', function(d) { return d.y0; })
+        //     .attr('width', function(d) { return d.x1 - d.x0; })
+        //     .attr('height', function(d) { return d.y1 - d.y0; });
 
         this[points] = this[points]
             .selectAll('circle')
@@ -77,6 +76,13 @@ class Detail {
             .attr('cy', d => ys(d.position.y))
             .attr('r', 2);
 
+        // this[nodeGroup].append('g')
+        //     .selectAll('text')
+        //     .data(graph.nodes).enter()
+        //     .append('text')
+        //     .attr('x', d => xs(d.position.x))
+        //     .attr('y', d => ys(d.position.y))
+        //     .text(d => d.classes.includes("bus") ? d.data.id : "");
         let ppoints = this[points];
 
         let bbox = d3.select('#scatterPlot').node().getBBox();
@@ -85,35 +91,61 @@ class Detail {
             .on('brush', function() {
                 let extent = d3.event.selection;
                 ppoints.each(d => d.selected = false);
-                search(ppoints, tree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
-                //ppoints.classed("point--scanned", function(d) { return d.scanned; });
-                ppoints.classed("point--selected", function(d) { return d.selected; });
-                let nodeIds = ppoints.filter(d => d.selected).data().map(d => d.data.id);
-                let visible = [...graph.adjList].filter(n => nodeIds.includes(n[0]))
-                    .map(n => [graph.nodeMap.get(n[0]), n[1]]);
-                    // {
-                    //     let sp = graph.nodeMap.get(n[0]).position;
-                    //     return [[sp.x, sp.y], n[1].map(ne=> [ne.position.x, ne.position.y])]
-                    // });
-                //console.log(visible);
-                let visible2=[];
-                for(let ne of visible)
-                    for(let nei of ne[1])
-                        visible2.push([ne[0].position, nei.position]);
+                let nodeIds =
+                    new Set([...search(ppoints, tree, extent[0][0], extent[0][1], extent[1][0], extent[1][1])]);
 
-                //console.log(visible2);
+                let visibleFroms = [], visibleTos = [];
+                let drawn = new Set();
+                let inside = new Set();
+                let outside = new Set();
+                //get outgoing and encode the arcs going from right to left
+                for(let fnode of graph.adjList.entries()) {
+                    if (nodeIds.has(fnode[0])) {
+                        let fromNode = graph.nodeMap.get(fnode[0]);
+                        let toNodes = fnode[1];
+                        for(let toNode of toNodes) {
+                            let nume = toNode.via.length;
+                            if(fromNode.position.x !== toNode.to.position.x &&
+                                fromNode.position.y !== toNode.to.position.y) {
+                                visibleFroms.push(Util.arcLinks(xs(fromNode.position.x), ys(fromNode.position.y),
+                                    xs(toNode.to.position.x), ys(toNode.to.position.y), nume, 15));
+                                drawn.add(`${fromNode.data.id}-${toNode.to.data.id}`);
+                            }
+
+                        }
+                    }
+                }
+
+                //get incoming and encode arcs going from left to right
+                for(let tnode of graph.revAdjList.entries()) {
+                    if (nodeIds.has(tnode[0])) {
+                        let toNode = graph.nodeMap.get(tnode[0]);
+                        let fromNodes = tnode[1];
+                        for(let fromNode of fromNodes) {
+                            let nume = fromNode.via.length;
+                            if(toNode.position.x !== fromNode.from.position.x &&
+                                toNode.position.y !== fromNode.from.position.y) {
+                                if(!drawn.has(`${fromNode.from.data.id}-${toNode.data.id}`))
+                                    visibleTos.push(Util.arcLinks(xs(fromNode.from.position.x), ys(fromNode.from.position.y),
+                                        xs(toNode.position.x), ys(toNode.position.y), nume, 15));
+                            }
+                        }
+                    }
+                }
+                visibleFroms = [].concat(...visibleFroms);
+                let allVisible = visibleFroms.concat(...visibleTos);
+
                 d3.select('#visibleEdges').remove();
                 let visibleEdges =  d3.select('#scatterPlot').append('g')
                      .attr('id', "visibleEdges")
                     .selectAll('path')
-                    .data(visible2).enter()
-                    .append('line')
-                    .attr('x1', d => xs(d[0].x))
-                    .attr('y1', d => ys(d[0].y))
-                    .attr('x2', d => xs(d[1].x))
-                    .attr('y2', d => ys(d[1].y))
-                    .attr('stroke', "black");
-                dispatch.call('selectionChanged', this, visible);
+                    .data(allVisible).enter()
+                    .append('path')
+                    .attr('d', d => d)
+                    .attr('fill', "none")
+                    .attr('stroke', "blue");
+                
+                dispatch.call('selectionChanged', this, nodeIds);
             });
 
         this[nodeGroup].append('g')
@@ -121,44 +153,37 @@ class Detail {
             .call(brush)
             .call(brush.move, [[300,300], [420,420]]);
 
-        function nodes(qtree) {
-            let nodes = [];
-            qtree.visit(function(node, x0, y0, x1, y1) {
-                node.x0 = x0, node.y0 = y0;
-                node.x1 = x1, node.y1 = y1;
-                if(y1 > height) node.y1 = height;
-                if(y0 > height) node.y0 = height;
-                if(x1 > width) node.x1 = width;
-                if(x0 > width) node.x0 = width;
-                nodes.push(node);
-            });
-            return nodes;
-        }
+        // function nodes(qtree) {
+        //     let nodes = [];
+        //     qtree.visit(function(node, x0, y0, x1, y1) {
+        //         node.x0 = x0, node.y0 = y0;
+        //         node.x1 = x1, node.y1 = y1;
+        //         if(y1 > height) node.y1 = height;
+        //         if(y0 > height) node.y0 = height;
+        //         if(x1 > width) node.x1 = width;
+        //         if(x0 > width) node.x0 = width;
+        //         nodes.push(node);
+        //     });
+        //     return nodes;
+        // }
 
         // Find the nodes within the specified rectangle.
         function search(points, qtree, x0, y0, x3, y3) {
+            let results = [];
             qtree.visit(function(node, x1, y1, x2, y2) {
                 if (!node.length) {
                     do {
                         let d = node.data;
                         let dp = [node.data.position.x, node.data.position.y];
-                        //d.scanned = true;
                         d.selected = (xs(dp[0]) >= x0) && (xs(dp[0]) < x3) && (ys(dp[1]) >= y0) && (ys(dp[1]) < y3);
-                        //console.log(dp, (x0), (y0))
-                        //if(d.selected) console.log(d[0], d[1])
+                        if(d.selected) {results.push(d.data.id);}
                     } while (node = node.next);
                 }
                 return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
             });
+            return results;
         }
-
      }
-
-     selectedNodes() {
-        return this.selectedNodes;
-     }
-
-
 }
 
 export {Detail};
