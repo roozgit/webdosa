@@ -61,15 +61,6 @@ class Detail {
 
         this[points] = this[nodeGroup].append('g').attr('id', "scatterPlot");
 
-        // this[points].selectAll('.node')
-        //     .data(nodes(tree))
-        //     .enter().append('rect')
-        //     .attr('class', "node")
-        //     .attr('x', function(d) { return d.x0; })
-        //     .attr('y', function(d) { return d.y0; })
-        //     .attr('width', function(d) { return d.x1 - d.x0; })
-        //     .attr('height', function(d) { return d.y1 - d.y0; });
-
         this[points] = this[points]
             .selectAll('circle')
             .data(graph.nodes).enter()
@@ -78,15 +69,6 @@ class Detail {
             .attr('cx', d => xs(d.position.x))
             .attr('cy', d => ys(d.position.y))
             .attr('r', 2);
-
-        // this[nodeGroup].append('g')
-        //     .selectAll('text')
-        //     .data(graph.nodes).enter()
-        //     .append('text')
-        //     .attr('x', d => xs(d.position.x))
-        //     .attr('y', d => ys(d.position.y))
-        //     .text(d => d.classes.includes("bus") ? d.data.id : "");
-        //let ppoints = this[points];
 
         let bbox = d3.select('#scatterPlot').node().getBBox();
         let brush = d3brush()
@@ -100,19 +82,37 @@ class Detail {
             .call(brush);
             //.call(brush.move, [[300,300], [420,420]]);
 
-        // function nodes(qtree) {
-        //     let nodes = [];
-        //     qtree.visit(function(node, x0, y0, x1, y1) {
-        //         node.x0 = x0, node.y0 = y0;
-        //         node.x1 = x1, node.y1 = y1;
-        //         if(y1 > height) node.y1 = height;
-        //         if(y0 > height) node.y0 = height;
-        //         if(x1 > width) node.x1 = width;
-        //         if(x0 > width) node.x0 = width;
-        //         nodes.push(node);
-        //     });
-        //     return nodes;
-        // }
+
+        let detailControlsX = d3.select('#detailControls')
+            .append('select')
+            .style("position", "relative")
+            .attr("id", "xvar")
+            .selectAll("option")
+            .data(Object.keys(graph.nodes[0].data))
+            .enter()
+            .append("option")
+            .attr("value", d => d)
+            .text(d => d);
+
+
+        let detailControlsY = d3.select('#detailControls')
+            .append('select')
+            .style("position", "relative")
+            .attr("id", "yvar")
+            .selectAll("option")
+            .data(Object.keys(graph.nodes[0].data))
+            .enter()
+            .append("option")
+            .attr("value", d => d)
+            .text(d => d);
+
+        detailControlsX.filter(d => d==="lng").attr('selected', "selected");
+        detailControlsY.filter(d => d==="lat").attr('selected', "selected");
+        let submitButton = d3.select('#detailControls')
+            .append('button')
+            .attr('id', "varChange")
+            .text('Redraw!')
+            .on('click', redrawPlot.bind(this));
 
         // Find the nodes within the specified rectangle.
         function search(points, qtree, x0, y0, x3, y3) {
@@ -122,13 +122,18 @@ class Detail {
                     do {
                         let d = node.data;
                         let dp = [node.data.position.x, node.data.position.y];
-                        d.selected = (xs(dp[0]) >= x0) && (xs(dp[0]) < x3) && (ys(dp[1]) >= y0) && (ys(dp[1]) < y3);
-                        if(d.selected) {results.push(d.data.id);}
+                        let selected = (xs(dp[0]) >= x0) && (xs(dp[0]) < x3) && (ys(dp[1]) >= y0) && (ys(dp[1]) < y3);
+                        if(selected) {results.push(d.data.id);}
                     } while (node = node.next);
                 }
                 return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
             });
             return results;
+        }
+
+        function redrawPlot() {
+            let xvar = detailControlsX.attr('value');
+            let yvar = detailControlsY.attr('value');
         }
 
         function brushStart() {
@@ -138,7 +143,6 @@ class Detail {
 
         function brushed() {
             let extent = d3.event.selection;
-            this[points].each(d => d.selected = false);
             let nodeIds =
                 new Set([...search(this[points], tree, extent[0][0], extent[0][1], extent[1][0], extent[1][1])]);
 
@@ -194,12 +198,12 @@ class Detail {
                 .attr('fill', "none")
                 .attr('stroke', this.colors.get(this.selectionIndex));
             this.selections[this.selectionIndex] = nodeIds;
-            dispatch.call('selectionChanged', this, this.selections);
+
         }
 
         function emitData() {
-            console.log(this.selections)
             this.selectionIndex = (this.selectionIndex + 1) % 4;
+            dispatch.call('selectionChanged', this, this.selections);
         }
      }
 }
