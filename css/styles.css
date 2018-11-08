@@ -1,17 +1,15 @@
+body {
+    background-color: black;
+}
+
 .column {
     display: flex;
 }
 .node {
     fill: none;
-    stroke: #ccc;
+    stroke: lightgray;
     shape-rendering: crispEdges;
 }
-/*.point--scanned {*/
-    /*fill: orange;*/
-    /*fill-opacity: 1;*/
-    /*stroke: orange;*/
-    /*stroke-width: 1px;*/
-/*}*/
 
 .point--selected {
     fill: blue;

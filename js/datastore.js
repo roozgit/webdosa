@@ -9,7 +9,7 @@ class Datastore {
 
     getEles() {
         if(!this.nodes || !this.edges) {
-            d3fetcher.json("/WebDOSA/data/activsg5.json")
+            d3fetcher.json("/WebDOSA/data/activsg6.json")
                 .then(function(graph) {
                     let hgraph = new HGraph(graph.nodes, graph.edges);
                     dispatch.call('dataLoad', this, hgraph)

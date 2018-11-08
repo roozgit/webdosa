@@ -12,7 +12,7 @@ class Aggregation {
             .attr('id', 'svgAggregation')
             .attr('width', width + margin.right + margin.left)
             .attr('height', height + margin.top + margin.bottom)
-            .style('border', "1px solid black")
+            .style('border', "1px solid lightgray")
             .append('g')
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
@@ -23,12 +23,12 @@ class Aggregation {
 
     updateData(nodes) {
         console.log("trying to update");
-        let rect = this[svg]
-            .append('rect')
-            .attr('x', 100)
-            .attr('y', 100)
-            .attr('height', this[scaler](nodes[0].size))
-            .attr('width', this[scaler](nodes[0].size))
+        // let rect = this[svg]
+        //     .append('rect')
+        //     .attr('x', 100)
+        //     .attr('y', 100)
+        //     .attr('height', this[scaler](nodes[0].size))
+        //     .attr('width', this[scaler](nodes[0].size))
     }
 }
 

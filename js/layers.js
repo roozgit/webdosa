@@ -3,7 +3,7 @@ import d3 from 'd3-selection';
 let svg = Symbol();
 
 class LayerMgr {
-    constructor(el, width, height, margin) {
+    constructor(el, graph, width, height, margin) {
         this[svg] = d3.select(el)
             .append('svg')
             .attr('id', 'svgLayerMgr')
@@ -13,10 +13,13 @@ class LayerMgr {
             .append('g')
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
+        //add background layer
+        console.log(graph);
     }
 
     addSelection(nodes) {
         console.log(nodes);
+        //this[table].add a row to the table
     }
 }
 

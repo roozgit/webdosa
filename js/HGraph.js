@@ -1,4 +1,6 @@
-import {Util} from "./util";
+import {schemeCategory10} from "d3-scale-chromatic";
+import {scaleOrdinal} from "d3-scale";
+import {max as d3max, range} from "d3-array";
 
 class HGraph {
     constructor(nodes, edges) {
@@ -7,12 +9,18 @@ class HGraph {
         this.nodeMap = new Map();
         this.adjList = new Map();
         this.revAdjList = new Map();
+        this.layers = [];
+        this.colorScale = scaleOrdinal(schemeCategory10).domain(range(0,10));
+
+
         nodes.forEach(n => {
+            n.layers = [0];
             this.nodeMap.set(n.data.id, n);
         });
         this.edges.forEach(e => {
             let from = this.nodes.find(n => e.data.source === n.data.id);
             let to = this.nodes.find(n => e.data.target === n.data.id);
+            e.from = from.data.id; e.to = to.data.id;
             if(from && to) {
                 let clist = this.adjList.has(from.data.id) ? this.adjList.get(from.data.id) : [];
                 let revclist = this.revAdjList.has(to.data.id) ? this.revAdjList.get(to.data.id) : [];
@@ -36,8 +44,9 @@ class HGraph {
             } else console.log("huh?");
 
         });
-        //console.log(this.adjList);
-        //console.log(this.revAdjList);
+        this.layers.push(
+            {id:0, members: new Set([...this.nodeMap.keys()]), label:"background"});
+
     }
 
     getAdj(node) {
@@ -52,6 +61,32 @@ class HGraph {
         return this.edges;
     }
 
+    addLayer(nodeIds) {
+        let topLayerId = d3max(this.layers.map(la => la.id));
+        let newLayerId = topLayerId + 1;
+        let newLayerMembers = new Set();
+        for(let nodeId of nodeIds) {
+            let allNodeLayers = this.nodeMap.get(nodeId).layers;
+            let currentLayer = this.layers.find(lay => lay.id === [...allNodeLayers].pop());
+            allNodeLayers.push(newLayerId);
+            currentLayer.members.delete(nodeId);
+            newLayerMembers.add(nodeId);
+        }
+        this.layers.push({id: newLayerId, members: newLayerMembers, label: "layer-"+newLayerId});
+    }
+
+    updateLayer(layer, nodeIds) {
+        for(let nodeId of nodeIds) {
+            let allNodeLayers = this.nodeMap.get(nodeId).layers;
+            let currentLayer = allNodeLayers[allNodeLayers.length - 1];
+            if(currentLayer < layer) {
+                allNodeLayers.push(layer);
+                this.layers[layer].members.add(nodeId);
+                this.layers[currentLayer].members.delete(nodeId);
+            }
+        }
+
+    }
 }
 
 export {HGraph};
