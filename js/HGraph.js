@@ -76,12 +76,25 @@ class HGraph {
     }
 
     updateLayer(layer, nodeIds) {
+        let curnIdx = this.layers.findIndex(lay => lay.id ===layer);
+        let curNodes = this.layers[curnIdx].members;
+        //let lowerLayer = this.layers[curnIdx-1].members;
+        for(let cnodeId of curNodes) {
+            if(!nodeIds.has(cnodeId)) {
+                let tlayers = this.nodeMap.get(cnodeId).layers;
+                let spIdx = tlayers.indexOf(layer);
+                tlayers.splice(spIdx, 1);
+                curNodes.delete(cnodeId);
+                this.layers.find(lay => lay.id ===tlayers[tlayers.length-1]).members.add(cnodeId);
+            }
+        }
+
         for(let nodeId of nodeIds) {
             let allNodeLayers = this.nodeMap.get(nodeId).layers;
             let currentLayer = allNodeLayers[allNodeLayers.length - 1];
             if(currentLayer < layer) {
                 allNodeLayers.push(layer);
-                this.layers[layer].members.add(nodeId);
+                curNodes.add(nodeId);
                 this.layers[currentLayer].members.delete(nodeId);
             }
         }

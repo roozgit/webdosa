@@ -31,13 +31,15 @@ dispatch.on('dataLoad', function(graph) {
 dispatch.on('layerAdded', function(selectedIds) {
     //aggregation.updateData(selectedNodes);
     hgraph.addLayer(selectedIds);
+    //console.log(hgraph.layers);
 });
 
 dispatch.on('layerMoved', function(selectedIds) {
     hgraph.updateLayer(selectedIds.layer, selectedIds.nodeIds);
+    //console.log(hgraph.layers);
 });
 
 export {dispatch};
 
-const ds = new Datastore('activsg');
+const ds = new Datastore("/WebDOSA/data/activsg7.json");
 ds.getEles();
