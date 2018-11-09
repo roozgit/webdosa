@@ -7,7 +7,7 @@ let svg = Symbol();
 
 class Widget {
     constructor(el, graph, width, height, margin) {
-        console.log(graph);
+        //console.log(graph);
         this[svg] = d3.select(el)
             .append('svg')
             .attr('id', 'svgWidget')

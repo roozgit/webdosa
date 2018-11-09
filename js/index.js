@@ -41,5 +41,5 @@ dispatch.on('layerMoved', function(selectedIds) {
 
 export {dispatch};
 
-const ds = new Datastore("/WebDOSA/data/activsg7.json");
+const ds = new Datastore("/WebDOSA/data/activsg8.json");
 ds.getEles();

@@ -3,7 +3,7 @@ import {extent} from 'd3-array';
 import {axisBottom, axisLeft} from 'd3-axis';
 import {quadtree} from 'd3-quadtree';
 import d3 from 'd3-selection';
-import {brush as d3brush, brushSelection} from 'd3-brush';
+import {brush as d3brush} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks} from './util';
 
@@ -18,10 +18,8 @@ let defs = Symbol();
 
 class Detail {
     constructor(el, graph, width, height, margin) {
-        let xPos = graph.nodes.map(n => n.position.x);
-        let yPos = graph.nodes.map(n => n.position.y);
         this[nodeIds] = new Set();
-        this[brushes] =[];
+        this[brushes] = [];
 
         this[svg] = d3.select(el)
             .append('svg')
@@ -35,83 +33,119 @@ class Detail {
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
 
-        let xs = scaleLinear()
-            .domain(extent(xPos))
-            .range([0, width]);
-        let ys = scaleLinear()
-            .domain(extent(yPos))
-            .range([0, height]);
-
-        this[nodeGroup].append('g')
-            .style('color', "lightgray")
-            .call(axisLeft(ys));
-
-        this[nodeGroup].append('g')
-            .style('color', "lightgray")
-            .attr("transform", "translate(0," + height + ")")
-            .call(axisBottom(xs));
-
-        this[nodeGroup].append('text')
-            .attr('transform', "rotate(-90)")
-            .attr('y', 0 - margin.left)
-            .attr('x', 0 - (height / 2))
-            .attr('dy', "1em")
-            .attr('pointer-events', "none")
-            .style('text-anchor', "middle")
-            .style('fill', "lightgray")
-            .text("Y");
-
-        d3.selectAll('.tick')
-            .attr('pointer-events', "none");
-
-        this[quadTree] = quadtree()
-            .x(d => xs(d.position.x))
-            .y(d => ys(d.position.y))
-            .addAll(graph.nodes);
-
-        this[points] = this[nodeGroup].append('g').attr('id', "scatterPlot");
-
-        this[points] = this[points]
-            .selectAll('circle')
-            .data(graph.nodes).enter()
-            .append('circle')
-            .attr('class', 'dataPoints')
-            .attr('stroke', "lightgray")
-            .attr('cx', d => xs(d.position.x))
-            .attr('cy', d => ys(d.position.y))
-            .attr('r', 2);
-
-        this[gBrushes] = this[nodeGroup].append('g')
-            .attr("class", "brushes");
-
-        this.createBrush(graph,xs, ys);
-        this.drawBrushes();
+        redraw.call(this, false);
 
         let detailControlsX = d3.select('#detailControls')
             .append('select')
             .style("position", "relative")
-            .attr("id", "xvar")
-            .selectAll("option")
-            .data(Object.keys(graph.nodes[0].data))
-            .enter()
+            .attr("id", "xvar");
+
+        detailControlsX.selectAll("option")
+            .data(Object.keys(graph.nodes[0].features)).enter()
             .append("option")
             .attr("value", d => d)
             .text(d => d);
-
 
         let detailControlsY = d3.select('#detailControls')
             .append('select')
             .style("position", "relative")
-            .attr("id", "yvar")
-            .selectAll("option")
-            .data(Object.keys(graph.nodes[0].data))
-            .enter()
+            .attr("id", "yvar");
+        detailControlsY.selectAll("option")
+            .data(Object.keys(graph.nodes[0].features)).enter()
             .append("option")
             .attr("value", d => d)
             .text(d => d);
 
-        detailControlsX.filter(d => d==="lng").attr('selected', "selected");
-        detailControlsY.filter(d => d==="lat").attr('selected', "selected");
+        detailControlsX.selectAll('option').filter(d => d==="lng").attr('selected', "selected");
+        detailControlsY.selectAll('option').filter(d => d==="lat").attr('selected', "selected");
+
+        detailControlsX.on('change', () => {
+            let feat = detailControlsX.node().value;
+            graph.nodes.forEach(n => n.position.x = n.features[feat]);
+            redraw.call(this, true);
+        });
+
+        detailControlsY.on('change', () => {
+            let feat = detailControlsY.node().value;
+            graph.nodes.forEach(n => n.position.y = feat==="lat" ? n.features[feat] : -n.features[feat]);
+            redraw.call(this, true);
+        });
+
+        function redraw(updateMode) {
+            let xPos = graph.nodes.map(n => n.position.x);
+            let yPos = graph.nodes.map(n => n.position.y);
+            let xs = scaleLinear()
+                .domain(extent(xPos))
+                .range([0, width]);
+            let ys = scaleLinear()
+                .domain(extent(yPos))
+                .range([0, height]);
+
+            if(updateMode) this[nodeGroup].select('g#axisLeft').remove();
+            this[nodeGroup].append('g')
+                .attr('id', "axisLeft")
+                .style('color', "lightgrey")
+                .call(axisLeft(ys));
+
+            if (updateMode) this[nodeGroup].select('g#axisBottom').remove();
+            this[nodeGroup].append('g')
+                .attr('id', "axisBottom")
+                .style('color', "lightgray")
+                .attr("transform", "translate(0," + height + ")")
+                .call(axisBottom(xs));
+
+            if (updateMode) this[nodeGroup].select('text#leftAxisText').remove();
+            this[nodeGroup].append('text')
+                .attr('id', "leftAxisText")
+                .attr('transform', "rotate(-90)")
+                .attr('y', 0 - margin.left)
+                .attr('x', 0 - (height / 2))
+                .attr('dy', "1em")
+                .attr('pointer-events', "none")
+                .style('text-anchor', "middle")
+                .style('fill', "lightgray")
+                .text("Y");
+
+            d3.selectAll('.tick')
+                .attr('pointer-events', "none");
+
+            this[quadTree] = quadtree()
+                .x(d => xs(d.position.x))
+                .y(d => ys(d.position.y))
+                .addAll(graph.nodes);
+
+            if (!updateMode)
+                this[points] =
+                    this[nodeGroup].append('g').attr('id', "scatterPlot");
+
+            if (updateMode) {
+                console.log(this[points]);
+                this[points]
+                    .selectAll('circle')
+                    .data(graph.nodes);
+                this[points]
+                    .merge(this[points])
+                    .attr('cx', d => xs(d.position.x))
+                    .attr('cy', d => ys(d.position.y));
+            } else {
+                this[points] = this[points]
+                    .selectAll('circle')
+                    .data(graph.nodes).enter()
+                    .append('circle')
+                    .attr('id', d => d.data.id)
+                    .attr('class', 'dataPoints')
+                    .attr('stroke', "lightgray")
+                    .attr('cx', d => xs(d.position.x))
+                    .attr('cy', d => ys(d.position.y))
+                    .attr('r', 2);
+            }
+            if(!updateMode) {
+                this.createBrush(graph, xs, ys);
+                this[gBrushes] = this[nodeGroup].append('g')
+                    .attr("class", "brushes");
+                this.drawBrushes();
+            }
+        }
      }
 
      createBrush(graph, xs, ys) {
@@ -134,6 +168,10 @@ class Detail {
          }
 
          function brushed() {
+             d3.selectAll('#scatterPlot circle')
+                 .filter(d => !this[nodeIds].has(d.data.id))
+                 .attr('stroke', "lightgrey")
+                 .attr('fill', "lightgrey");
              let extent = d3.event.selection;
              this[nodeIds] = search(this[points], this[quadTree],
                  extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
@@ -226,7 +264,6 @@ class Detail {
                          }
                          return `url(#grad-${lays[0]}-${lays[1]})`;
                      });
-                     //.attr('stroke', graph.colorScale(layernum-1));
 
              let emptyGs = [...document.getElementsByClassName(`visibleEdges-layer-${layernum}`)]
                  .filter(xc => xc.children.length === 0);
@@ -234,6 +271,10 @@ class Detail {
          }
 
          function emitData() {
+             d3.selectAll('#scatterPlot circle')
+                 .filter(d => this[nodeIds].has(d.data.id))
+                 .attr('stroke', graph.colorScale(layernum-1))
+                 .attr('fill', graph.colorScale(layernum-1));
              d3.select(`#brush-${layernum}`).selectAll('rect.handle')
                  .attr('fill', graph.colorScale(layernum-1));
              if(newBrushFlag)
