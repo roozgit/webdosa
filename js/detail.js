@@ -9,6 +9,7 @@ import {arcLinks} from './util';
 
 let svg = Symbol();
 let nodeGroup = Symbol();
+let edgeGroup = Symbol();
 let points = Symbol();
 let nodeIds = Symbol();
 let gBrushes = Symbol();
@@ -109,22 +110,63 @@ class Detail {
             d3.selectAll('.tick')
                 .attr('pointer-events', "none");
 
-            this[quadTree] = quadtree()
-                .x(d => xs(d.position.x))
-                .y(d => ys(d.position.y))
-                .addAll(graph.nodes);
+            if(!updateMode) {
+                this[quadTree] = quadtree()
+                    .x(d => xs(d.position.x))
+                    .y(d => ys(d.position.y))
+                    .addAll(graph.nodes);
 
-            if (!updateMode)
+                // this[nodeGroup].selectAll('.node')
+                //     .data(nodes(this[quadTree]))
+                //     .enter().append('rect')
+                //     .attr('class', "node")
+                //     .attr('x', function(d) { return d.x0; })
+                //     .attr('y', function(d) { return d.y0; })
+                //     .attr('width', function(d) { return d.x1 - d.x0; })
+                //     .attr('height', function(d) { return d.y1 - d.y0; })
+                //     .style('opacity', .1);
+            } else {
+                this[quadTree] = quadtree()
+                    .x(d => xs(d.position.x))
+                    .y(d => ys(d.position.y))
+                    .addAll(graph.nodes);
+
+                // this[nodeGroup].selectAll('.node').remove();
+                // this[nodeGroup].selectAll('.node')
+                //     .data(nodes(this[quadTree]))
+                //     .enter().append('rect')
+                //     .attr('class', "node")
+                //     .attr('x', function(d) { return d.x0; })
+                //     .attr('y', function(d) { return d.y0; })
+                //     .attr('width', function(d) { return d.x1 - d.x0; })
+                //     .attr('height', function(d) { return d.y1 - d.y0; })
+                //     .style('opacity', .1);
+            }
+            // function nodes(qt) {
+            //     var nodes = [];
+            //     qt.visit(function(node, x0, y0, x1, y1) {
+            //         node.x0 = x0, node.y0 = y0;
+            //         node.x1 = x1, node.y1 = y1;
+            //         if(y1 > height) node.y1 = height;
+            //         if(y0 > height) node.y0 = height;
+            //         if(x1 > width) node.x1 = width;
+            //         if(x0 > width) node.x0 = width;
+            //         nodes.push(node);
+            //     });
+            //     return nodes;
+            // }
+
+            if (!updateMode) {
                 this[points] =
                     this[nodeGroup].append('g').attr('id', "scatterPlot");
+            }
+            if(updateMode) this[edgeGroup].remove();
+            this[edgeGroup] = this[nodeGroup].append('g').attr('id',"edgeContainer");
 
             if (updateMode) {
-                console.log(this[points]);
-                this[points]
-                    .selectAll('circle')
+                this[points] = this[points]
                     .data(graph.nodes);
                 this[points]
-                    .merge(this[points])
                     .attr('cx', d => xs(d.position.x))
                     .attr('cy', d => ys(d.position.y));
             } else {
@@ -143,7 +185,19 @@ class Detail {
                 this.createBrush(graph, xs, ys);
                 this[gBrushes] = this[nodeGroup].append('g')
                     .attr("class", "brushes");
-                this.drawBrushes();
+                this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
+            } else {
+                let xv = document.getElementById('xvar');
+                let yv = document.getElementById('yvar');
+                this[gBrushes].selectAll(`g:not(.brush-${xv ? xv.value : "lng"}-${yv ? yv.value : "lat"})`)
+                    .filter((_, i) => i > 0)
+                    .style('visibility', "hidden");
+                this[gBrushes].selectAll('g').filter((_, i) => i === 0).remove();
+                this[brushes].pop();
+                this.createBrush(graph, xs, ys);
+                this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
+                this[gBrushes].selectAll(`g.brush-${xv ? xv.value : "lng"}-${yv ? yv.value : "lat"}`)
+                    .style('visibility', "");
             }
         }
      }
@@ -168,14 +222,15 @@ class Detail {
          }
 
          function brushed() {
-             d3.selectAll('#scatterPlot circle')
-                 .filter(d => !this[nodeIds].has(d.data.id))
-                 .attr('stroke', "lightgrey")
-                 .attr('fill', "lightgrey");
+             //d3.selectAll('#scatterPlot circle')
+             this[points]
+                 .filter(d => !this[nodeIds].has(d.data.id) && (d.layers[d.layers.length-1]===0 ||
+                     d.layers[d.layers.length-1]===layernum))
+                 .attr('stroke', "lightgrey");
              let extent = d3.event.selection;
+
              this[nodeIds] = search(this[points], this[quadTree],
                  extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
-
              let visible = [];
              let drawnEdges= new Set();
 
@@ -233,7 +288,7 @@ class Detail {
 
              let defc = this[defs];
              if(visible.length > 0)
-                 d3.select('#scatterPlot').append('g')
+                 this[edgeGroup].append('g')
                      .attr('class', "visibleEdges-layer-" + layernum)
                      .selectAll('path')
                      .data(visible).enter()
@@ -273,15 +328,16 @@ class Detail {
          function emitData() {
              d3.selectAll('#scatterPlot circle')
                  .filter(d => this[nodeIds].has(d.data.id))
-                 .attr('stroke', graph.colorScale(layernum-1))
-                 .attr('fill', graph.colorScale(layernum-1));
+                 .attr('stroke', graph.colorScale(layernum-1));
+
              d3.select(`#brush-${layernum}`).selectAll('rect.handle')
                  .attr('fill', graph.colorScale(layernum-1));
+
              if(newBrushFlag)
                  this.createBrush(graph, xs, ys);
 
              // Always draw brushes
-             this.drawBrushes();
+             this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
              if(newBrushFlag)
                  dispatch.call('layerAdded', this, this[nodeIds]);
              else
@@ -295,7 +351,7 @@ class Detail {
                  if (!node.length) {
                      do {
                          let d = node.data;
-                         let dp = [node.data.position.x, node.data.position.y];
+                         let dp = [d.position.x, d.position.y];
                          let selected = (xs(dp[0]) >= x0) && (xs(dp[0]) < x3) && (ys(dp[1]) >= y0) && (ys(dp[1]) < y3);
                          if(selected) {
                              results.add(d.data.id);
@@ -308,15 +364,17 @@ class Detail {
          }
      }
 
-     drawBrushes() {
+     drawBrushes(xvar, yvar) {
          let brushSelection = this[gBrushes]
-             .selectAll('.brush')
+             .selectAll('[class^=brush]')
              .data(this[brushes], d => d.id);
 
+         // brushSelection.exit()
+         //     .remove();
          // Set up new brushes
          brushSelection.enter()
-             .insert("g", '.brush')
-             .attr('class', 'brush')
+             .insert('g', ":first-child")//, '.brush-'+ (xvar ? xvar.value : "lng")  + '-' + (yvar ? yvar.value : "lat"))
+             .attr('class', 'brush-'+ (xvar ? xvar.value : "lng")  + '-' + (yvar ? yvar.value : "lat"))
              .attr('id', function(brush){ return "brush-" + brush.id; })
              .each(function(brushObject) {
                  brushObject.brush(d3.select(this));
@@ -330,23 +388,27 @@ class Detail {
           * This frees the overlay for the most current (as of yet with an empty selection) brush to listen for click and drag events
           * The moving and resizing is done with other parts of the brush, so that will still work.
           */
-         let len = this[brushes].length;
-         brushSelection
-             .each(function (brushObject) {
-                 d3.select(this)
-                     .attr('class', 'brush')
-                     .selectAll('.overlay')
-                     .style('pointer-events', function() {
-                         if (brushObject.id === len) {
-                             return 'all';
-                         } else {
-                             return 'none';
-                         }
-                     });
-             });
+         this[gBrushes]
+             .selectAll('[class^=brush]')
+             .filter((_,i) => i > 0)
+             .selectAll('.overlay')
+             .style('pointer-events', "none");
 
-         brushSelection.exit()
-             .remove();
+
+             // .each(function (brushObject) {
+             //     d3.select(this)
+             //         //.attr('class', 'brush-'+ (xvar ? xvar.value : "lng")  + '-' + (yvar ? yvar.value : "lat"))
+             //         .selectAll('.overlay')
+             //         .style('pointer-events', function() {
+             //             console.log(brushObject);
+             //             if (brushObject.id === len) {
+             //                 return 'all';
+             //             } else {
+             //                 return 'none';
+             //             }
+             //         });
+             // });
+
      }
 }
 

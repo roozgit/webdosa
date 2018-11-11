@@ -1,25 +1,39 @@
 import d3 from 'd3-selection';
 
-let svg = Symbol();
+let tbl = Symbol();
 
 class LayerMgr {
     constructor(el, graph, width, height, margin) {
-        this[svg] = d3.select(el)
-            .append('svg')
-            .attr('id', 'svgLayerMgr')
+        this[tbl] = d3.select(el)
+            .append('table')
+            .attr('id', 'tblLayerMgr')
             .attr('width', width + margin.right + margin.left)
-            .attr('height', height + margin.top + margin.bottom)
-            .style('border', "1px solid black")
-            .append('g')
-            .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
-        //add background layer
-        console.log(graph);
+            .attr('height', height + margin.top + margin.bottom);
+            //.style('border', "1px solid grey");
     }
 
-    addSelection(nodes) {
-        console.log(nodes);
-        //this[table].add a row to the table
+    addLayer(layers) {
+        let layer = layers[layers.length-1];
+        let trow = this[tbl].append('tr')
+            .attr('id', "layer-"+layer.id);
+        let tdarr = [layer.id, layer.label, layer.members.size];
+        trow.selectAll('td')
+            .data(tdarr).enter()
+            .append('td')
+            .text(d => d);
+        trow.append('td')
+            .style('background-color', layer.color);
+    }
+
+    updateLayer(layers) {
+        //let targetLayer = layers[layernum];
+        this[tbl].selectAll('tr')
+            .each(function(_, i) {
+                d3.select(this).select('td:nth-child(3)')
+                    .text(layers[i].members.size);
+            })
+
+
     }
 }
 
