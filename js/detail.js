@@ -222,10 +222,11 @@ class Detail {
          }
 
          function brushed() {
-             d3.selectAll('#scatterPlot circle')
-                 .filter(d => !this[nodeIds].has(d.data.id) && d.layers.length===1)
-                 .attr('stroke', "lightgrey")
-                 .attr('fill', "lightgrey");
+             //d3.selectAll('#scatterPlot circle')
+             this[points]
+                 .filter(d => !this[nodeIds].has(d.data.id) && (d.layers[d.layers.length-1]===0 ||
+                     d.layers[d.layers.length-1]===layernum))
+                 .attr('stroke', "lightgrey");
              let extent = d3.event.selection;
 
              this[nodeIds] = search(this[points], this[quadTree],
@@ -327,8 +328,8 @@ class Detail {
          function emitData() {
              d3.selectAll('#scatterPlot circle')
                  .filter(d => this[nodeIds].has(d.data.id))
-                 .attr('stroke', graph.colorScale(layernum-1))
-                 .attr('fill', graph.colorScale(layernum-1));
+                 .attr('stroke', graph.colorScale(layernum-1));
+
              d3.select(`#brush-${layernum}`).selectAll('rect.handle')
                  .attr('fill', graph.colorScale(layernum-1));
 
