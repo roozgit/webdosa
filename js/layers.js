@@ -14,15 +14,45 @@ class LayerMgr {
 
     addLayer(layers) {
         let layer = layers[layers.length-1];
+        console.log(layer.label)
         let trow = this[tbl].append('tr')
             .attr('id', "layer-"+layer.id);
         let tdarr = [layer.id, layer.label, layer.members.size];
+
         trow.selectAll('td')
             .data(tdarr).enter()
             .append('td')
             .text(d => d);
+
+        trow.append('input')
+            .attr("type","checkbox")
+            .style("float","left")
+            .property("checked",true)
+            .on("change", function(){
+                if(this.checked){
+                    console.log("layer "+layer.id+" has been added")
+                }else {
+                    console.log("layer "+layer.id+" has been removed")
+                }
+            });
+
+        trow.append('td')
+            .attr('font-family','FontAwesome')
+            .text(function(d){
+                return '\uf118'
+            });
+
+
         trow.append('td')
             .style('background-color', layer.color);
+
+        // trow.on("click", function(d){
+        //     console.log("jad")
+        // });
+
+
+
+
     }
 
     updateLayer(layers) {

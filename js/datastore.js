@@ -16,6 +16,11 @@ class Datastore {
                 });
         }
     }
+
+    remoteGet() {
+    //    Write a function that connects to the server (use d3fetcher.json
+    //
+    }
 }
 
 export default Datastore;
