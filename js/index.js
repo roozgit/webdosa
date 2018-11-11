@@ -44,4 +44,5 @@ dispatch.on('layerMoved', function(selectedIds) {
 export {dispatch};
 
 const ds = new Datastore("data/activsg8.json");
+//const ds = new Datastore("data/flight.json");
 ds.getEles();

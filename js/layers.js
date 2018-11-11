@@ -23,6 +23,7 @@ class LayerMgr {
             .text(d => d);
         trow.append('td')
             .style('background-color', layer.color);
+        trow.on("click", () => console.log("hi"))
     }
 
     updateLayer(layers) {
