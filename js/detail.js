@@ -142,19 +142,19 @@ class Detail {
                 //     .attr('height', function(d) { return d.y1 - d.y0; })
                 //     .style('opacity', .1);
             }
-            function nodes(qt) {
-                var nodes = [];
-                qt.visit(function(node, x0, y0, x1, y1) {
-                    node.x0 = x0, node.y0 = y0;
-                    node.x1 = x1, node.y1 = y1;
-                    if(y1 > height) node.y1 = height;
-                    if(y0 > height) node.y0 = height;
-                    if(x1 > width) node.x1 = width;
-                    if(x0 > width) node.x0 = width;
-                    nodes.push(node);
-                });
-                return nodes;
-            }
+            // function nodes(qt) {
+            //     var nodes = [];
+            //     qt.visit(function(node, x0, y0, x1, y1) {
+            //         node.x0 = x0, node.y0 = y0;
+            //         node.x1 = x1, node.y1 = y1;
+            //         if(y1 > height) node.y1 = height;
+            //         if(y0 > height) node.y0 = height;
+            //         if(x1 > width) node.x1 = width;
+            //         if(x0 > width) node.x0 = width;
+            //         nodes.push(node);
+            //     });
+            //     return nodes;
+            // }
 
             if (!updateMode) {
                 this[points] =
@@ -187,11 +187,17 @@ class Detail {
                     .attr("class", "brushes");
                 this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
             } else {
-                this[gBrushes].selectAll('g').filter((_, i) => i > 0).style('display', "none");
+                let xv = document.getElementById('xvar');
+                let yv = document.getElementById('yvar');
+                this[gBrushes].selectAll(`g:not(.brush-${xv ? xv.value : "lng"}-${yv ? yv.value : "lat"})`)
+                    .filter((_, i) => i > 0)
+                    .style('visibility', "hidden");
                 this[gBrushes].selectAll('g').filter((_, i) => i === 0).remove();
                 this[brushes].pop();
                 this.createBrush(graph, xs, ys);
                 this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
+                this[gBrushes].selectAll(`g.brush-${xv ? xv.value : "lng"}-${yv ? yv.value : "lat"}`)
+                    .style('visibility', "");
             }
         }
      }
@@ -217,7 +223,7 @@ class Detail {
 
          function brushed() {
              d3.selectAll('#scatterPlot circle')
-                 .filter(d => !this[nodeIds].has(d.data.id))
+                 .filter(d => !this[nodeIds].has(d.data.id) && d.layers.length===1)
                  .attr('stroke', "lightgrey")
                  .attr('fill', "lightgrey");
              let extent = d3.event.selection;
