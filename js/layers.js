@@ -13,10 +13,9 @@ class LayerMgr {
     }
 
     addLayer(layers) {
-        console.log(layer);
         let layer = layers[layers.length-1];
         let trow = this[tbl].append('tr')
-            .attr('id', layer.id);
+            .attr('id', "layer-"+layer.id);
         let tdarr = [layer.id, layer.label, layer.members.size];
         trow.selectAll('td')
             .data(tdarr).enter()
@@ -24,6 +23,15 @@ class LayerMgr {
             .text(d => d);
         trow.append('td')
             .style('background-color', layer.color);
+    }
+
+    updateLayer(layers) {
+        //let targetLayer = layers[layernum];
+        this[tbl].selectAll('tr')
+            .each(function(_, i) {
+                d3.select(this).select('td:nth-child(3)')
+                    .text(layers[i].members.size);
+            })
 
 
     }

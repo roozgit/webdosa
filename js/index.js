@@ -17,6 +17,7 @@ const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved');
 //Register events and design workflow in a series of callbacks here
 dispatch.on('dataLoad', function(graph) {
     hgraph = graph;
+    console.log(hgraph);
     widget = new Widget("#widgets", graph, scWidgetWidth, 2 *height /3,
         {top: 10, right: 20, bottom: 100, left: 10});
     layerMgr = new LayerMgr("#layerMgr", graph, scWidgetWidth, height / 3,
@@ -37,7 +38,7 @@ dispatch.on('layerAdded', function(selectedIds) {
 
 dispatch.on('layerMoved', function(selectedIds) {
     hgraph.updateLayer(selectedIds.layer, selectedIds.nodeIds);
-    //console.log(hgraph.layers);
+    layerMgr.updateLayer(hgraph.layers, selectedIds.layer)
 });
 
 export {dispatch};
