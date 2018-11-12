@@ -16,6 +16,16 @@ function arcLinks(x1,y1,x2,y2,n,k) {
     }
     return paths;
 }
+//https://stackoverflow.com/a/8486188/2928853
+function getJsonFromUrl() {
+    let query = location.search.substr(1);
+    let result = {};
+    query.split("&").forEach(function(part) {
+        let item = part.split("=");
+        result[item[0]] = decodeURIComponent(item[1]);
+    });
+    return result;
+}
 
-export {arcLinks};
+export {arcLinks, getJsonFromUrl};
 
