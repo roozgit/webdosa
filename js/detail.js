@@ -6,6 +6,7 @@ import d3 from 'd3-selection';
 import {brush as d3brush} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks} from './util';
+import {zoom} from "d3-zoom";
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -33,6 +34,14 @@ class Detail {
             .attr('id', "nodeGroup")
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
+        this[points] =
+            this[nodeGroup].append('g').attr('id', "scatterPlot");
+
+        let zooming = zoom()
+            .scaleExtent([1, 5])
+            .translateExtent([[0, 0], [width, height]])
+            .on('zoom', () => this[nodeGroup].attr('transform', d3.event.transform));
+        this[nodeGroup].call(zooming);
 
         redraw.call(this, false);
 
@@ -156,10 +165,10 @@ class Detail {
             //     return nodes;
             // }
 
-            if (!updateMode) {
-                this[points] =
-                    this[nodeGroup].append('g').attr('id', "scatterPlot");
-            }
+            // if (!updateMode) {
+            //     this[points] =
+            //         this[nodeGroup].append('g').attr('id', "scatterPlot");
+            // }
             if(updateMode) this[edgeGroup].remove();
             this[edgeGroup] = this[nodeGroup].append('g').attr('id',"edgeContainer");
 
@@ -223,10 +232,10 @@ class Detail {
 
          function brushed() {
              //d3.selectAll('#scatterPlot circle')
-             this[points]
-                 .filter(d => !this[nodeIds].has(d.data.id) && (d.layers[d.layers.length-1]===0 ||
-                     d.layers[d.layers.length-1]===layernum))
-                 .attr('stroke', "lightgrey");
+             // this[points]
+             //     .filter(d => !this[nodeIds].has(d.data.id) && (d.layers[d.layers.length-1]===0 ||
+             //         d.layers[d.layers.length-1]===layernum))
+             //     .attr('stroke', "lightgrey");
              let extent = d3.event.selection;
 
              this[nodeIds] = search(this[points], this[quadTree],
@@ -285,20 +294,16 @@ class Detail {
              d3.select('#edgeContainer').selectAll('path')
                  .filter(d => {
                      let fromflag1 = !this[nodeIds].has(d.fromid);
+                     if(fromflag1)
+                     if(!graph.layers.slice(1).filter(la => la.id !== layernum).some(la => la.members.has(d.fromid)))
+                         return true;
+                     //else return false;
                      let toflag1 = !this[nodeIds].has(d.toid);
-                     let fromflag2 = true;
-                     let toflag2 = true;
-                     if (fromflag1) {
-                         let frl = graph.nodeMap.get(d.fromid).layers;
-                         fromflag2 = frl[frl.length - 1] === layernum ||
-                             frl.length === 1;
-                     }
-                     if (toflag1) {
-                         let tl = graph.nodeMap.get(d.fromid).layers;
-                         toflag2 = tl[tl.length - 1] === layernum ||
-                             tl.length === 1;
-                     }
-                     return (fromflag1 && fromflag2) || (toflag1 && toflag2);
+                     if(toflag1)
+                     if(!graph.layers.slice(1).filter(la => la.id !== layernum).some(la => la.members.has(d.toid)))
+
+                         return true;
+                     return false;
                  }).remove();
 
              let defc = this[defs];
@@ -328,7 +333,7 @@ class Detail {
                                  .attr("stop-opacity", 1);
                              grd.append("stop")
                                  .attr('class', 'end')
-                                 .attr("offset", "200%")
+                                 .attr("offset", "100%")
                                  .attr("stop-color", lays[1]===0 ? "lightgrey" : graph.colorScale(lays[1]-1))
                                  .attr("stop-opacity", 1);
                          }
@@ -342,28 +347,6 @@ class Detail {
          }
 
          function emitData() {
-             d3.select('#edgeContainer').selectAll('path')
-                 .filter(d => {
-                     let fromflag1 = !this[nodeIds].has(d.fromid);
-                     let toflag1 = !this[nodeIds].has(d.toid);
-                     let fromflag2 = true;
-                     let toflag2 = true;
-                     if (fromflag1) {
-                         let frl = graph.nodeMap.get(d.fromid).layers;
-                         fromflag2 = frl[frl.length - 1] === layernum ||
-                             frl.length === 1;
-                     }
-                     if (toflag1) {
-                         let tl = graph.nodeMap.get(d.fromid).layers;
-                         toflag2 = tl[tl.length - 1] === layernum ||
-                             tl.length === 1;
-                     }
-                     return (fromflag1 && fromflag2) || (toflag1 && toflag2);
-                 }).remove();
-             d3.selectAll('#scatterPlot circle')
-                 .filter(d => this[nodeIds].has(d.data.id))
-                 .attr('stroke', graph.colorScale(layernum-1));
-
              d3.select(`#brush-${layernum}`).selectAll('rect.handle')
                  .attr('fill', graph.colorScale(layernum-1));
 
@@ -376,6 +359,25 @@ class Detail {
                  dispatch.call('layerAdded', this, this[nodeIds]);
              else
                  dispatch.call('layerMoved', this, {layer: layernum, nodeIds: this[nodeIds]});
+
+             d3.selectAll('#scatterPlot circle')
+                 .attr('stroke',d => {
+                     return graph.layers[Array.from(d.layers).pop()].color
+                 });
+             d3.select('#edgeContainer').selectAll('path')
+                 .filter(d => {
+                     let fromflag1 = !this[nodeIds].has(d.fromid);
+                     if(fromflag1)
+                         if(!graph.layers.slice(1).filter(la => la.id !== layernum).some(la => la.members.has(d.fromid)))
+                             return true;
+                     //else return false;
+                     let toflag1 = !this[nodeIds].has(d.toid);
+                     if(toflag1)
+                         if(!graph.layers.slice(1).filter(la => la.id !== layernum).some(la => la.members.has(d.toid)))
+
+                             return true;
+                     return false;
+                 }).remove();
          }
 
          // Find the nodes within the specified rectangle.
@@ -427,21 +429,6 @@ class Detail {
              .filter((_,i) => i > 0)
              .selectAll('.overlay')
              .style('pointer-events', "none");
-
-
-             // .each(function (brushObject) {
-             //     d3.select(this)
-             //         //.attr('class', 'brush-'+ (xvar ? xvar.value : "lng")  + '-' + (yvar ? yvar.value : "lat"))
-             //         .selectAll('.overlay')
-             //         .style('pointer-events', function() {
-             //             console.log(brushObject);
-             //             if (brushObject.id === len) {
-             //                 return 'all';
-             //             } else {
-             //                 return 'none';
-             //             }
-             //         });
-             // });
 
      }
 }
