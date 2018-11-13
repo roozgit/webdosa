@@ -4,6 +4,7 @@ import {Widget} from './widget.js';
 import {Aggregation} from './aggregation.js'
 import Datastore from "./datastore";
 import {LayerMgr} from "./layers";
+import {getJsonFromUrl} from "./util";
 //import {HGraph as graph} from "./HGraph";
 
 let scWidgetWidth = 180;
@@ -42,7 +43,7 @@ dispatch.on('layerMoved', function(selectedIds) {
 });
 
 export {dispatch};
-
-const ds = new Datastore("data/activsg8.json");
-//const ds = new Datastore("data/flight.json");
+let dataset = getJsonFromUrl()['dataset'];
+dataset = dataset ? dataset : "activsg";
+const ds = new Datastore(`data/${dataset}.json`);
 ds.getEles();
