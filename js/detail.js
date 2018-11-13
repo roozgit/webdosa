@@ -256,7 +256,7 @@ class Detail {
                          for (let p = 0; p < toPaths.length; p++)
                              visible.push({id: tonode.via[p].data.id, path: toPaths[p],
                                  dlayers: [layernum, destlayer],
-                             from: nodeId, to: tonode.to.data.id});
+                             fromid: nodeId, toid: tonode.to.data.id});
                      }
                  }
                  if(froms) {
@@ -277,14 +277,29 @@ class Detail {
                          for (let p = 0; p < fromPaths.length; p++)
                              visible.push({id: fromnode.via[p].data.id, path: fromPaths[p],
                                  dlayers: [destlayer, layernum],
-                                 from: fromnode.from.data.id, to: nodeId});
+                                 fromid: fromnode.from.data.id, toid: nodeId});
                      }
                  }
              }
 
-             d3.selectAll(`.visibleEdges-layer-${layernum}`).selectAll('path')
-                 .filter(d =>
-                    !this[nodeIds].has(d.from) && !this[nodeIds].has(d.to)).remove();
+             d3.select('#edgeContainer').selectAll('path')
+                 .filter(d => {
+                     let fromflag1 = !this[nodeIds].has(d.fromid);
+                     let toflag1 = !this[nodeIds].has(d.toid);
+                     let fromflag2 = true;
+                     let toflag2 = true;
+                     if (fromflag1) {
+                         let frl = graph.nodeMap.get(d.fromid).layers;
+                         fromflag2 = frl[frl.length - 1] === layernum ||
+                             frl.length === 1;
+                     }
+                     if (toflag1) {
+                         let tl = graph.nodeMap.get(d.fromid).layers;
+                         toflag2 = tl[tl.length - 1] === layernum ||
+                             tl.length === 1;
+                     }
+                     return (fromflag1 && fromflag2) || (toflag1 && toflag2);
+                 }).remove();
 
              let defc = this[defs];
              if(visible.length > 0)
@@ -320,12 +335,31 @@ class Detail {
                          return `url(#grad-${lays[0]}-${lays[1]})`;
                      });
 
-             let emptyGs = [...document.getElementsByClassName(`visibleEdges-layer-${layernum}`)]
-                 .filter(xc => xc.children.length === 0);
-             emptyGs.forEach(g => g.remove());
+             d3.select('#edgeContainer').selectAll('g')
+                 .filter(function() {
+                     return d3.select(this).selectAll('path').empty();
+                 }).remove();
          }
 
          function emitData() {
+             d3.select('#edgeContainer').selectAll('path')
+                 .filter(d => {
+                     let fromflag1 = !this[nodeIds].has(d.fromid);
+                     let toflag1 = !this[nodeIds].has(d.toid);
+                     let fromflag2 = true;
+                     let toflag2 = true;
+                     if (fromflag1) {
+                         let frl = graph.nodeMap.get(d.fromid).layers;
+                         fromflag2 = frl[frl.length - 1] === layernum ||
+                             frl.length === 1;
+                     }
+                     if (toflag1) {
+                         let tl = graph.nodeMap.get(d.fromid).layers;
+                         toflag2 = tl[tl.length - 1] === layernum ||
+                             tl.length === 1;
+                     }
+                     return (fromflag1 && fromflag2) || (toflag1 && toflag2);
+                 }).remove();
              d3.selectAll('#scatterPlot circle')
                  .filter(d => this[nodeIds].has(d.data.id))
                  .attr('stroke', graph.colorScale(layernum-1));

@@ -1,12 +1,12 @@
-import {scaleLinear} from 'd3-scale';
 import d3 from 'd3-selection';
 
-
 let svg = Symbol();
-let scaler = Symbol();
+let links = Symbol();
+let boxNodes = Symbol();
 
 class Aggregation {
     constructor(el, width, height, margin) {
+
         this[svg] = d3.select(el)
             .append('svg')
             .attr('id', 'svgAggregation')
@@ -16,20 +16,30 @@ class Aggregation {
             .append('g')
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
-        this[scaler] = scaleLinear()
-            .domain([0, 6500])
-            .range([0, width]);
     }
 
-    updateData(nodes) {
-        console.log("trying to update");
-        // let rect = this[svg]
-        //     .append('rect')
-        //     .attr('x', 100)
-        //     .attr('y', 100)
-        //     .attr('height', this[scaler](nodes[0].size))
-        //     .attr('width', this[scaler](nodes[0].size))
+    addBox(graph, edgeFeature) {
+
+        function calculateBoxEdges() {
+            for(let layer of graph.layers.slice(1)) {
+                let members = layer.members;
+                let withinEdge = 0;
+                let betweenEdge = 0;
+                for(let memberId of members) {
+                    let targets = graph.adjList.get(memberId);
+                    for(let target of targets) {
+                        let targetLayer = Array.from(target.to.layers).pop();
+                        if(targetLayer === +layer.id) { //within edge
+                            withinEdge += target.via.map(ev => ev.features[edgeFeature])
+                        }
+                    }
+                }
+            }
+        }
+
     }
+
+
 }
 
 export {Aggregation};
