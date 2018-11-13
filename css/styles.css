@@ -11,13 +11,6 @@ body {
     shape-rendering: crispEdges;
 }
 
-.point--selected {
-    fill: blue;
-    fill-opacity: 1;
-    stroke: blue;
-    stroke-width: 1px;
-}
-
 .col2 {
     display : flex;
     flex-direction: column;

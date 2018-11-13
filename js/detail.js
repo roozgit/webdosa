@@ -7,6 +7,7 @@ import {brush as d3brush} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks} from './util';
 import {zoom} from "d3-zoom";
+import {interpolateRgb, interpolateHsl} from 'd3-interpolate';
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -315,30 +316,41 @@ class Detail {
                      .append('path')
                      .attr('d', d => d.path)
                      .attr('id', d => d.id)
-                     .attr('fill', "none")
-                     .attr('stroke', function(d) {
+                     .attr('fill', function(d) {
                          let lays = d.dlayers;
+                         let tcolor1 = graph.layers[lays[0]];
+                         let tcolor2 = graph.layers[lays[1]];
+                         tcolor1 = tcolor1 ? tcolor1.color : graph.colorScale(lays[1]-1);
+                         tcolor2 = tcolor2 ? tcolor2.color : graph.colorScale(lays[2]-1);
+
                          if(lays[0]===lays[1]) {
-                             return graph.colorScale(layernum - 1);
+                             return tcolor1;
                          }
                          if(lays[0]===0 || lays[1]===0) return "none";
                          if(document.getElementById(`grad-${lays[0]}-${lays[1]}`) === null) {
                              let grd = defc.append('linearGradient')
                                  .attr('id', `grad-${lays[0]}-${lays[1]}`)
-                                 .attr("gradientUnits", "userSpaceOnUse");
+                                 .attr("gradientUnits", "objectBoundingBox")
+                                 .attr('gradientTransform', "rotate(90)");
                              grd.append("stop")
-                                 .attr('class', 'start')
-                                 .attr("offset", "0%")
-                                 .attr("stop-color", lays[0]===0 ? "lightgrey" : graph.colorScale(lays[0]-1))
+                                 //.attr('class', 'start')
+                                 .attr("offset", "50%")
+                                 .attr("stop-color", tcolor2)
                                  .attr("stop-opacity", 1);
+                             // grd.append("stop")
+                             //     .attr('class', 'middle')
+                             //     .attr("offset", "30%")
+                             //     .attr("stop-color", interpolateRgb.gamma(2.2)(tcolor2, tcolor1))
+                             //   .attr("stop-opacity", 1);
                              grd.append("stop")
-                                 .attr('class', 'end')
-                                 .attr("offset", "100%")
-                                 .attr("stop-color", lays[1]===0 ? "lightgrey" : graph.colorScale(lays[1]-1))
+                                 //.attr('class', 'end')
+                                 .attr("offset", "50%")
+                                 .attr("stop-color", tcolor1)
                                  .attr("stop-opacity", 1);
                          }
                          return `url(#grad-${lays[0]}-${lays[1]})`;
-                     });
+                     })
+                     .attr('stroke', "none");
 
              d3.select('#edgeContainer').selectAll('g')
                  .filter(function() {
