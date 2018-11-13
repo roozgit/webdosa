@@ -232,34 +232,27 @@ class Detail {
          }
 
          function brushed() {
-             //d3.selectAll('#scatterPlot circle')
-             // this[points]
-             //     .filter(d => !this[nodeIds].has(d.data.id) && (d.layers[d.layers.length-1]===0 ||
-             //         d.layers[d.layers.length-1]===layernum))
-             //     .attr('stroke', "lightgrey");
              let extent = d3.event.selection;
 
              this[nodeIds] = search(this[points], this[quadTree],
                  extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
              let visible = [];
-             let drawnEdges= new Set();
 
              for(let nodeId of this[nodeIds]) {
                  let node = graph.nodeMap.get(nodeId);
                  let tos = graph.adjList.get(nodeId);
                  let froms = graph.revAdjList.get(nodeId);
                  if(tos) {
-                     //tos = tos.filter(nod => nod.to.layers[nod.to.layers.length-1]!==0)
                      for (let tonode of tos) {
                          let tonodeLayers = tonode.to.layers;
                          let tonodelayer = tonodeLayers[tonodeLayers.length-1];
                          let destlayer = this[nodeIds].has(tonode.to.data.id) ? layernum : tonodelayer;
+                         if(destlayer < 1) continue;
+                         if(destlayer === layernum && !this[nodeIds].has(tonode.to.data.id))
+                             continue;
 
                          let topos = tonode.to.position;
                          let nume = tonode.via.length;
-                         for (let edge of tonode.via)
-                             if (drawnEdges.has(edge.data.id)) nume--;
-                             else drawnEdges.add(edge.data.id);
 
                          let toPaths = arcLinks(xs(node.position.x), ys(node.position.y),
                              xs(topos.x), ys(topos.y), nume, 15);
@@ -270,18 +263,17 @@ class Detail {
                      }
                  }
                  if(froms) {
-                     //froms = froms.filter(nod => nod.from.layers[nod.from.layers.length-1]!==0);
-                     for (let fromnode of froms) {
+                     let vismap = new Set([...visible.map(d => d.id)]);
+                     for (let fromnode of froms.filter(d => !vismap.has(d.id))) {
                          let fromnodeLayers = fromnode.from.layers;
                          let fromnodelayer = fromnodeLayers[fromnodeLayers.length-1];
                          let destlayer = this[nodeIds].has(fromnode.from.data.id) ? layernum : fromnodelayer;
+                         if(destlayer < 1) continue;
+                         if(destlayer === layernum && !this[nodeIds].has(fromnode.from.data.id))
+                             continue;
 
                          let frompos = fromnode.from.position;
                          let nume = fromnode.via.length;
-                         for (let edge of fromnode.via)
-                             if (drawnEdges.has(edge.data.id)) nume--;
-                             else drawnEdges.add(edge.data.id);
-
                          let fromPaths = arcLinks(xs(frompos.x), ys(frompos.y),
                              xs(node.position.x), ys(node.position.y), nume, 15);
                          for (let p = 0; p < fromPaths.length; p++)
@@ -292,70 +284,27 @@ class Detail {
                  }
              }
 
-             d3.select('#edgeContainer').selectAll('path')
+             this[edgeGroup].selectAll('path')
                  .filter(d => {
-                     let fromflag1 = !this[nodeIds].has(d.fromid);
-                     if(fromflag1)
-                     if(!graph.layers.slice(1).filter(la => la.id !== layernum).some(la => la.members.has(d.fromid)))
-                         return true;
-                     //else return false;
-                     let toflag1 = !this[nodeIds].has(d.toid);
-                     if(toflag1)
-                     if(!graph.layers.slice(1).filter(la => la.id !== layernum).some(la => la.members.has(d.toid)))
+                     let lay1 = d.dlayers[0];
+                     let lay2 = d.dlayers[1];
+                     if(lay1===lay2 && lay1===layernum) return true;
+                     return lay1 !== lay2 && !this[nodeIds].has(d.fromid) && !this[nodeIds].has(d.toid);
+                     }
+                 )
+                 .data(visible, d => d.id).exit()
+                 .remove();
 
-                         return true;
-                     return false;
-                 }).remove();
-
-             let defc = this[defs];
              if(visible.length > 0)
-                 this[edgeGroup].append('g')
-                     .attr('class', "visibleEdges-layer-" + layernum)
-                     .selectAll('path')
-                     .data(visible).enter()
+                 this[edgeGroup].selectAll('path')
+                     .data(visible, d => d.id).enter()
                      .append('path')
-                     .attr('d', d => d.path)
                      .attr('id', d => d.id)
-                     .attr('fill', function(d) {
-                         let lays = d.dlayers;
-                         let tcolor1 = graph.layers[lays[0]];
-                         let tcolor2 = graph.layers[lays[1]];
-                         tcolor1 = tcolor1 ? tcolor1.color : graph.colorScale(lays[1]-1);
-                         tcolor2 = tcolor2 ? tcolor2.color : graph.colorScale(lays[2]-1);
-
-                         if(lays[0]===lays[1]) {
-                             return tcolor1;
-                         }
-                         if(lays[0]===0 || lays[1]===0) return "none";
-                         if(document.getElementById(`grad-${lays[0]}-${lays[1]}`) === null) {
-                             let grd = defc.append('linearGradient')
-                                 .attr('id', `grad-${lays[0]}-${lays[1]}`)
-                                 .attr("gradientUnits", "objectBoundingBox")
-                                 .attr('gradientTransform', "rotate(90)");
-                             grd.append("stop")
-                                 //.attr('class', 'start')
-                                 .attr("offset", "50%")
-                                 .attr("stop-color", tcolor2)
-                                 .attr("stop-opacity", 1);
-                             // grd.append("stop")
-                             //     .attr('class', 'middle')
-                             //     .attr("offset", "30%")
-                             //     .attr("stop-color", interpolateRgb.gamma(2.2)(tcolor2, tcolor1))
-                             //   .attr("stop-opacity", 1);
-                             grd.append("stop")
-                                 //.attr('class', 'end')
-                                 .attr("offset", "50%")
-                                 .attr("stop-color", tcolor1)
-                                 .attr("stop-opacity", 1);
-                         }
-                         return `url(#grad-${lays[0]}-${lays[1]})`;
-                     })
-                     .attr('stroke', "none");
-
-             d3.select('#edgeContainer').selectAll('g')
-                 .filter(function() {
-                     return d3.select(this).selectAll('path').empty();
-                 }).remove();
+                     .attr('layer0', d => d.dlayers[0])
+                     .attr('layer1', d => d.dlayers[1])
+                     .attr('d', d => d.path)
+                     .attr('fill', "none")
+                     .attr('stroke', d => graph.colorScale(d.dlayers[0]-1));
          }
 
          function emitData() {
@@ -376,20 +325,6 @@ class Detail {
                  .attr('stroke',d => {
                      return graph.layers[Array.from(d.layers).pop()].color
                  });
-             d3.select('#edgeContainer').selectAll('path')
-                 .filter(d => {
-                     let fromflag1 = !this[nodeIds].has(d.fromid);
-                     if(fromflag1)
-                         if(!graph.layers.slice(1).filter(la => la.id !== layernum).some(la => la.members.has(d.fromid)))
-                             return true;
-                     //else return false;
-                     let toflag1 = !this[nodeIds].has(d.toid);
-                     if(toflag1)
-                         if(!graph.layers.slice(1).filter(la => la.id !== layernum).some(la => la.members.has(d.toid)))
-
-                             return true;
-                     return false;
-                 }).remove();
          }
 
          // Find the nodes within the specified rectangle.
