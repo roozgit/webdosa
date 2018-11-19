@@ -1,7 +1,5 @@
 import d3 from 'd3-selection';
-import {forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY} from "d3-force";
-import {arcLinks} from "./util";
-import {symbol, symbolTriangle} from "d3-shape";
+import {arcLinks, ellipticalArc} from "./util";
 import {drag} from "d3-drag";
 
 let svg = Symbol();
@@ -9,8 +7,34 @@ let boxLinks = Symbol();
 let boxNodes = Symbol();
 let swidth = Symbol();
 let sheight = Symbol();
-let boxDragger = Symbol();
+
+const quadSep = 60;
 const boxWidth = 150;
+const displacementSelf = [
+    {dx1 : boxWidth, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : 0, dir: "1,0", arrowRot: 180},
+    {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : 0, dir: "1,1"},
+    {dx1 : boxWidth, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,1"},
+    {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,0"}
+];
+const displacementBetween =
+    {dx1 : boxWidth/2, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth/2, dir: "1,0"};
+
+function markerGenerator(color, mid) {
+    let tmarker = d3.select('#aggDefs')
+        .append('marker')
+        .attr('id', "arrowHead-" + mid)
+        .attr('viewBox', "0 0 10 10")
+        .attr('markerWidth', 2)
+        .attr('markerHeight', 2)
+        .attr('refX', "2")
+        .attr('refY', "5")
+        .attr('markerUnits', "strokeWidth")
+        .attr('orient', "auto")
+        .attr('overflow', "visible")
+        .attr('fill', color);
+    tmarker.append('path')
+        .attr('d', "M 0 0 L 5 5 L 0 10 z");
+}
 
 class Aggregation {
     constructor(el, width, height, margin) {
@@ -25,6 +49,9 @@ class Aggregation {
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
 
+        d3.select('#svgAggregation').insert('defs', "g")
+            .attr('id', "aggDefs");
+
         this[swidth] = width;
         this[sheight] = height;
         this[boxNodes] = this[svg].append('g')
@@ -33,12 +60,6 @@ class Aggregation {
         this[boxLinks] = this[svg].append('g')
             .attr('id', "linker");
 
-        // this[boxDragger] = drag()
-        //     .on('drag', function() {
-        //     d3.select(this)
-        //         .attr('x', +d3.event.x)
-        //         .attr('y', +d3.event.y);
-        // })
     }
 
     /*
@@ -54,6 +75,7 @@ class Aggregation {
             return {
                 source: laycopy.find(la => la.id === btg.dlayers[0]),
                 target: laycopy.find(la => la.id === btg.dlayers[1]),
+                displacement : displacementBetween,
                 value: btg.length
             };
         });
@@ -64,6 +86,7 @@ class Aggregation {
                 return {
                     source: laycopy.find(la => la.id === dest.dlayers[0]),
                     target: laycopy.find(la => la.id === dest.dlayers[0]),
+                    displacement : displacementSelf[(dest.dlayers[0]-1) % 4],
                     value: within.get(kw).length
                 };
             else return undefined;
@@ -79,30 +102,17 @@ class Aggregation {
                     .attr('y', +d3.event.y);
 
                 d3.select('#linker').selectAll('path')
-                    .filter(d => d.source.id === item.data()[0].id)
+                    .filter(d => d.source.id === item.data()[0].id || d.target.id === item.data()[0].id)
                     .attr('d', d => {
-                    if (d.source.id === d.target.id) {
-                        let dx = boxWidth/2,
-                            dy = boxWidth/2,
-                            dr = Math.sqrt(dx * dx + dy * dy);
-                        return "M" + (+d.source.x+boxWidth) + "," + (+d.source.y+dy)
-                            + "A" + dx + ","
-                            + dx + " 0 1,0 " + (+d.target.x+dx) + "," + d.target.y;
-
-                    }
-                    else
-                        return "M" + (+d.source.x) + "," + (+d.source.y)
-                            + "A" + boxWidth/2 + ","
-                            + boxWidth/2 + " 0 1,0 " + (+d.target.x) + "," + d.target.y;
-                });
-
-                d3.select('#linker').selectAll('.arrowHeads')
-                    .attr('d', symbol().type(symbolTriangle))
-                    .attr('transform', d =>
-                        `translate(${(+d.target.x+boxWidth/2)},${+d.target.y})
-                    rotate(180)
-                    scale(5 5)`)
-                    .style('fill', d => d.source.color)
+                        let sx = +d.source.x + d.displacement.dx1;
+                        let sy = +d.source.y + d.displacement.dy1;
+                        let tx = +d.target.x + d.displacement.dx2;
+                        let ty = +d.target.y + d.displacement.dy2;
+                        if(d.source.x===d.target.x && d.source.y===d.target.y)
+                            return ellipticalArc(sx, sy, tx, ty, boxWidth, boxWidth/2, boxWidth/2, d.displacement.dir);
+                        else
+                            return arcLinks(sx,sy,tx,ty,1,quadSep);
+                    });
             });
 
         this[boxNodes].selectAll('rect')
@@ -114,8 +124,9 @@ class Aggregation {
             .attr('width', boxWidth)
             .attr('height', boxWidth)
             .attr('stroke', d => d.color)
-            .attr('stroke-width', "10px")
-            .attr('fill', "black").call(boxDragger);
+            .attr('stroke-width', "5px")
+            //.attr('fill', "black")
+            .call(boxDragger);
 
         if(allArr.length > 0) {
             laycopy.forEach(la => {
@@ -129,45 +140,34 @@ class Aggregation {
             this[boxLinks].selectAll('path')
                 .data(allArr, d => d.source.id + "-" + d.target.id).exit()
                 .remove();
-            this[boxLinks].selectAll('.arrowHeads')
-                .data(allArr, d => d.source.id + "-" + d.target.id).exit()
-                .remove();
+
 
             this[boxLinks].selectAll('path')
                 .data(allArr, d => d.source.id + "-" + d.target.id).enter()
                 .append('path')
                 .attr('class', "arrows")
                 .attr('d', d => {
-                    if (d.source.id === d.target.id) {
-                        let dx = boxWidth/2,
-                            dy = boxWidth/2,
-                            dr = Math.sqrt(dx * dx + dy * dy);
-                        return "M" + (+d.source.x+boxWidth) + "," + (+d.source.y+dy)
-                            + "A" + dx + ","
-                            + dx + " 0 1,0 " + (+d.target.x+dx) + "," + d.target.y;
-
-                    }
-                    else {
-
-                        return "M" + (+d.source.x) + "," + (+d.source.y)
-                            + "A" + boxWidth/2 + ","
-                            + boxWidth/2 + " 0 1,0 " + (+d.target.x) + "," + d.target.y;
-                    }
+                    let sx = +d.source.x + d.displacement.dx1;
+                    let sy = +d.source.y + d.displacement.dy1;
+                    let tx = +d.target.x + d.displacement.dx2;
+                    let ty = +d.target.y + d.displacement.dy2;
+                    if(d.source.x===d.target.x && d.source.y===d.target.y)
+                        return ellipticalArc(sx, sy, tx, ty, boxWidth, boxWidth/2, boxWidth/2, d.displacement.dir);
+                    else
+                        return arcLinks(sx,sy,tx,ty,1,quadSep);
                 })
                 .attr("stroke-width", "35px")
                 .attr("fill", "none")
-                .attr("stroke", d => d.source.color);
+                .attr("stroke", d => d.source.color)
+                .attr('marker-end', d => {
+                    //console.log(d3.select('#arrowHead-' + d.source.id))
+                    if(d3.select('#arrowHead-' + d.source.id).empty()) {
+                        console.log("empty");
+                        markerGenerator(d.source.color, d.source.id);
+                    }
+                    return `url(#arrowHead-${d.source.id})`
+                });
 
-            this[boxLinks].selectAll('.arrowHeads')
-                .data(allArr, d => d.source.id + "-" + d.target.id).enter()
-                .append('path')
-                .attr('class', "arrowHeads")
-                .attr('d', symbol().type(symbolTriangle))
-                .attr('transform', d =>
-                    `translate(${(+d.target.x+boxWidth/2)},${+d.target.y})
-                    rotate(180)
-                    scale(5 5)`)
-                .style('fill', d => d.source.color);
         }
     }
 }
