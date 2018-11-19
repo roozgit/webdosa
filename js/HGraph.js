@@ -46,7 +46,6 @@ class HGraph {
         });
         this.layers.push(
             {id:0, members: new Set([...this.nodeMap.keys()]), label:"background", color: "lightgrey"});
-
     }
 
     getAdj(node) {
@@ -67,7 +66,7 @@ class HGraph {
         let newLayerMembers = new Set();
         for(let nodeId of nodeIds) {
             let allNodeLayers = this.nodeMap.get(nodeId).layers;
-            let currentLayer = this.layers.find(lay => lay.id === [...allNodeLayers].pop());
+            let currentLayer = this.layers.find(lay => lay.id === Array.from(allNodeLayers).pop());
             allNodeLayers.push(newLayerId);
             currentLayer.members.delete(nodeId);
             newLayerMembers.add(nodeId);

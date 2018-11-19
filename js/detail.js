@@ -7,7 +7,6 @@ import {brush as d3brush} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks} from './util';
 import {zoom} from "d3-zoom";
-import {interpolateRgb, interpolateHsl} from 'd3-interpolate';
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -18,11 +17,15 @@ let gBrushes = Symbol();
 let quadTree = Symbol();
 let brushes = Symbol();
 let defs = Symbol();
+let withinEdges = Symbol();
+let betweenEdges = Symbol();
 
 class Detail {
     constructor(el, graph, width, height, margin) {
         this[nodeIds] = new Set();
         this[brushes] = [];
+        this[withinEdges] = new Map();
+        this[betweenEdges] = [];
 
         this[svg] = d3.select(el)
             .append('svg')
@@ -215,20 +218,26 @@ class Detail {
      createBrush(graph, xs, ys) {
          let bbox = d3.select('#scatterPlot').node().getBBox();
          let brush = d3brush()
+             // .filter(function() {
+             //     console.log(event.button);
+             //     return !event.button;
+             // })
              .extent([[bbox.x, bbox.y], [bbox.x + bbox.width, bbox.y + bbox.height]])
              .on('start', brushStart)
              .on('brush', brushed.bind(this))
              .on('end', emitData.bind(this));
 
-         this[brushes].push({id: this[brushes].length+1, brush: brush});
+         this[brushes].push({id: this[brushes].length + 1, brush: brush});
 
          let curBrushes = this[brushes];
          let newBrushFlag = false;
-         let layernum = 0;
+         let layerId = 0;
 
          function brushStart() {
-             layernum = +d3.select(this).attr('id').split("-")[1];
-             newBrushFlag = !curBrushes.map(bru => bru.id).includes(layernum + 1);
+             layerId = +d3.select(this).attr('id').split("-")[1];
+             newBrushFlag = !curBrushes.map(bru => bru.id).includes(layerId + 1);
+             if(newBrushFlag)
+                 dispatch.call('layerAdded', this, new Set());
          }
 
          function brushed() {
@@ -236,7 +245,8 @@ class Detail {
 
              this[nodeIds] = search(this[points], this[quadTree],
                  extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
-             let visible = [];
+             let visible = new Map();
+             dispatch.call('layerMoved', this, {layer: layerId, nodeIds: this[nodeIds]});
 
              for(let nodeId of this[nodeIds]) {
                  let node = graph.nodeMap.get(nodeId);
@@ -246,10 +256,8 @@ class Detail {
                      for (let tonode of tos) {
                          let tonodeLayers = tonode.to.layers;
                          let tonodelayer = tonodeLayers[tonodeLayers.length-1];
-                         let destlayer = this[nodeIds].has(tonode.to.data.id) ? layernum : tonodelayer;
+                         let destlayer = this[nodeIds].has(tonode.to.data.id) ? layerId : tonodelayer;
                          if(destlayer < 1) continue;
-                         if(destlayer === layernum && !this[nodeIds].has(tonode.to.data.id))
-                             continue;
 
                          let topos = tonode.to.position;
                          let nume = tonode.via.length;
@@ -257,69 +265,100 @@ class Detail {
                          let toPaths = arcLinks(xs(node.position.x), ys(node.position.y),
                              xs(topos.x), ys(topos.y), nume, 15);
                          for (let p = 0; p < toPaths.length; p++)
-                             visible.push({id: tonode.via[p].data.id, path: toPaths[p],
-                                 dlayers: [layernum, destlayer],
-                             fromid: nodeId, toid: tonode.to.data.id});
+                             visible.set(tonode.via[p].data.id,
+                                 {id: tonode.via[p].data.id, path: toPaths[p],
+                                     dlayers: [layerId, destlayer],
+                                     fromid: nodeId, toid: tonode.to.data.id});
                      }
                  }
                  if(froms) {
-                     let vismap = new Set([...visible.map(d => d.id)]);
-                     for (let fromnode of froms.filter(d => !vismap.has(d.id))) {
+                     for (let fromnode of froms) {
                          let fromnodeLayers = fromnode.from.layers;
                          let fromnodelayer = fromnodeLayers[fromnodeLayers.length-1];
-                         let destlayer = this[nodeIds].has(fromnode.from.data.id) ? layernum : fromnodelayer;
+                         let destlayer = this[nodeIds].has(fromnode.from.data.id) ? layerId : fromnodelayer;
                          if(destlayer < 1) continue;
-                         if(destlayer === layernum && !this[nodeIds].has(fromnode.from.data.id))
-                             continue;
 
                          let frompos = fromnode.from.position;
                          let nume = fromnode.via.length;
+
                          let fromPaths = arcLinks(xs(frompos.x), ys(frompos.y),
                              xs(node.position.x), ys(node.position.y), nume, 15);
                          for (let p = 0; p < fromPaths.length; p++)
-                             visible.push({id: fromnode.via[p].data.id, path: fromPaths[p],
-                                 dlayers: [destlayer, layernum],
-                                 fromid: fromnode.from.data.id, toid: nodeId});
+                             visible.set(fromnode.via[p].data.id,
+                                 {id: fromnode.via[p].data.id, path: fromPaths[p],
+                                     dlayers: [destlayer, layerId],
+                                     fromid: fromnode.from.data.id, toid: nodeId});
                      }
                  }
              }
 
-             this[edgeGroup].selectAll('path')
-                 .filter(d => {
-                     let lay1 = d.dlayers[0];
-                     let lay2 = d.dlayers[1];
-                     if(lay1===lay2 && lay1===layernum) return true;
-                     return lay1 !== lay2 && !this[nodeIds].has(d.fromid) && !this[nodeIds].has(d.toid);
-                     }
-                 )
-                 .data(visible, d => d.id).exit()
-                 .remove();
+             for(let wed of this[withinEdges]) {
+                 if(wed[0] !== layerId) {
+                     wed[1].forEach(we => {
+                         if(visible.has(we.id)) {
+                             we.dlayers = visible.get(we.id).dlayers;
+                         }
+                         visible.set(we.id, we)
+                     });
+                 } else {
+                     wed[1].forEach(we => {
+                         let a1 = Array.from(graph.nodeMap.get(we.fromid).layers).pop();
+                         let a2 = Array.from(graph.nodeMap.get(we.toid).layers).pop();
+                         we.dlayers = [a1, a2];
+                     })
+                 }
+             }
 
-             if(visible.length > 0)
+             this[betweenEdges].forEach(bed => {
+                 if(bed.dlayers[0] !== layerId && bed.dlayers[1] !== layerId)
+                     visible.set(bed.id, bed);
+             });
+
+
+             let visibleArr = [...visible].map(d => d[1]);
+
+             this[edgeGroup].selectAll('path')
+                 .data(visibleArr, d=>d.id)
+                 .exit().remove();
+
+             this[edgeGroup].selectAll('path')
+                 .data(visibleArr, d => d.id)
+                 .attr('stroke', d => graph.layers.find(la => la.id===d.dlayers[0]).color);
+
+             if(visibleArr.length > 0)
                  this[edgeGroup].selectAll('path')
-                     .data(visible, d => d.id).enter()
+                     .data(visibleArr, d => d.id).enter()
                      .append('path')
                      .attr('id', d => d.id)
-                     .attr('layer0', d => d.dlayers[0])
-                     .attr('layer1', d => d.dlayers[1])
                      .attr('d', d => d.path)
                      .attr('fill', "none")
-                     .attr('stroke', d => graph.colorScale(d.dlayers[0]-1));
+                     .attr('stroke', d => graph.layers.find(la => la.id===d.dlayers[0]).color);
+
+             this[withinEdges].set(layerId, this[edgeGroup].selectAll('path')
+                 .filter(d => d.dlayers[0]===d.dlayers[1] && d.dlayers[0]===layerId).data());
+
+             this[betweenEdges] =
+                 this[edgeGroup].selectAll('path').filter(d => d.dlayers[0]!==d.dlayers[1]).data();
+
+             dispatch.call('overviewUpdate', this,
+                 {within: this[withinEdges], between: this[betweenEdges]});
+
          }
 
          function emitData() {
-             d3.select(`#brush-${layernum}`).selectAll('rect.handle')
-                 .attr('fill', graph.colorScale(layernum-1));
+             let bru = d3.select(`#brush-${layerId}`);
+             // let brushSize = bru.select('rect.selection').node().getBBox();
+             // if(brushSize.width===0 || brushSize.length===0) {
+             //    console.log("zero sized brush...take care later!!!");
+             // }
+             bru.selectAll('rect.handle')
+                 .attr('fill', graph.layers.find(la => la.id===layerId).color);
 
              if(newBrushFlag)
                  this.createBrush(graph, xs, ys);
 
              // Always draw brushes
              this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
-             if(newBrushFlag)
-                 dispatch.call('layerAdded', this, this[nodeIds]);
-             else
-                 dispatch.call('layerMoved', this, {layer: layernum, nodeIds: this[nodeIds]});
 
              d3.selectAll('#scatterPlot circle')
                  .attr('stroke',d => {

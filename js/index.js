@@ -13,7 +13,7 @@ let infogWidth = 400;
 let height = 750;
 let widget, layerMgr, detail, aggregation, hgraph;
 
-const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved');
+const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'overviewUpdate');
 
 //Register events and design workflow in a series of callbacks here
 dispatch.on('dataLoad', function(graph) {
@@ -32,7 +32,6 @@ dispatch.on('dataLoad', function(graph) {
 });
 
 dispatch.on('layerAdded', function(selectedIds) {
-    //aggregation.updateData(selectedNodes);
     hgraph.addLayer(selectedIds);
     layerMgr.addLayer(hgraph.layers);
 });
@@ -40,6 +39,10 @@ dispatch.on('layerAdded', function(selectedIds) {
 dispatch.on('layerMoved', function(selectedIds) {
     hgraph.updateLayer(selectedIds.layer, selectedIds.nodeIds);
     layerMgr.updateLayer(hgraph.layers, selectedIds.layer)
+});
+
+dispatch.on('overviewUpdate', function(overviewObj) {
+    aggregation.updateOverview(overviewObj, hgraph, (f1, _) => f1.length);
 });
 
 export {dispatch};

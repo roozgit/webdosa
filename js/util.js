@@ -14,7 +14,7 @@ function arcLinks(x1, y1, x2, y2, n, k) {
         let ex = cx - dy/dd * k * (i + 1 -(n-1)/2);
         let ey = cy + dx/dd * k * (i + 1 -(n-1)/2);
         //the if is to prevent zero length arcs (overlapping points)
-        if(dd > 0) paths.push("M"+x1+" "+y1+"Q"+ex+" "+ey+" "+x2+" "+y2);
+        if(dd && dd > 0) paths.push("M"+x1+" "+y1+"Q"+ex+" "+ey+" "+x2+" "+y2);
     }
     return paths;
 }
