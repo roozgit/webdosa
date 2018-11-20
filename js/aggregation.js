@@ -145,6 +145,7 @@ class Aggregation {
             this[boxLinks].selectAll('path')
                 .data(allArr, d => d.source.id + "-" + d.target.id).enter()
                 .append('path')
+                .attr('id', d => "bigPath-" + d.source.id + "-" + d.target.id )
                 .attr('class', "arrows")
                 .attr('d', d => {
                     let sx = +d.source.x + d.displacement.dx1;
@@ -158,7 +159,10 @@ class Aggregation {
                 })
                 .attr("stroke-width", "35px")
                 .attr("fill", "none")
-                .attr("stroke", d => d.source.color)
+                .attr("stroke", d => {
+                    if(d.source.id === d.target.id)
+                        return d.source.color;
+                })
                 .attr('marker-end', d => {
                     if(d3.select('#arrowHead-' + d.source.id).empty()) {
                         markerGenerator(d.source.color, d.source.id);
@@ -175,18 +179,32 @@ class Aggregation {
             });
             this[boxLinks].selectAll('path').filter(d => d.source.id!==d.target.id)
                 .each(function(d) {
-                    paths.set(d.source.id + "-" + d.target.id, samples(d3.select(this).node(),1));
+                    paths.set(d.source.id + "-" + d.target.id,
+                        {pathBreak: samples(d3.select(this).node(), 8), pathData: d}
+                    );
+                    d3.select(this).remove();
                 });
             for(let pat of paths) {
                 let patsplit = pat[0].split("-");
                 let b1 = patsplit[0];
                 let b2 = patsplit[1];
-                let isec1 = intersect(pat[1], rects.get(+b1));
-                let isec2 = intersect(pat[1], rects.get(+b2));
-                d3.select('#linker').append('circle').attr('cx', isec2[0])
-                    .attr('cy', isec2[1]).attr('fill', "blue").attr('r', 15)
-                console.log(isec1);
-
+                let isec1 = intersect(pat[1].pathBreak, rects.get(+b1));
+                let isec2 = intersect(pat[1].pathBreak, rects.get(+b2));
+                let newpat = arcLinks(isec1[0],isec1[1], isec2[0], isec2[1], 1, quadSep);
+                this[boxLinks].selectAll('path').filter(d => d.id === "bigPath-"+pat[0]).remove();
+                this[boxLinks].append('path')
+                    .datum(pat[1].pathData, d => d.source.id + "-" + d.target.id)
+                    .attr('id', pat[0])
+                    .attr("stroke-width", "35px")
+                    .attr('d', newpat)
+                    .attr("fill", "none")
+                    .attr("stroke", d => d.source.color)
+                    .attr('marker-end', d => {
+                        if(d3.select('#arrowHead-' + d.source.id).empty()) {
+                            markerGenerator(d.source.color, d.source.id);
+                        }
+                        return `url(#arrowHead-${d.source.id})`
+                    });
             }
         };
         pathUpdater();
