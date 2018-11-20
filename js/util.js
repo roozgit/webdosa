@@ -18,6 +18,13 @@ function arcLinks(x1, y1, x2, y2, n, k) {
     }
     return paths;
 }
+
+ function ellipticalArc(x1, y1, x2, y2, w, r1, r2, dir) {
+    return "M" + x1 + "," + y1
+        + "A" + r1 + ","
+        + r2 + ` 0 ${dir} ` + x2 + "," + y2;
+ }
+
 //https://stackoverflow.com/a/8486188/2928853
 function getJsonFromUrl() {
     let query = location.search.substr(1);
@@ -31,11 +38,11 @@ function getJsonFromUrl() {
 
 // Sample the SVG path uniformly with the specified precision.
 function samples(path, precision) {
-    var n = path.getTotalLength(), t = [0], i = 0, dt = precision;
+    let n = path.getTotalLength(), t = [0], i = 0, dt = precision;
     while ((i += dt) < n) t.push(i);
     t.push(n);
     return t.map(function(t) {
-        var p = path.getPointAtLength(t), a = [p.x, p.y];
+        let p = path.getPointAtLength(t), a = [p.x, p.y];
         a.t = t / n;
         return a;
     });
@@ -89,5 +96,30 @@ function perp(p0, p1) {
     return [u01x / u01d, u01y / u01d];
 }
 
-export {arcLinks, getJsonFromUrl};
+function insideRect(point, rect) {
+    return point[0] >= rect.x && point[0] <= rect.x + rect.width
+        && point[1] >= rect.y && point[1] <= rect.y + rect.height;
+}
+
+function intersect(points, rect) {
+    let forward = false, backward = false;
+    let i,j;
+    for(i=0, j= points.length-1; i < points.length-1, j>=0; i++, j--) {
+        if (insideRect(points[i], rect) &&
+            !insideRect(points[i + 1], rect)) {
+            forward = true;
+            break;
+        }
+        if (insideRect(points[j], rect) &&
+                !insideRect(points[j - 1], rect)) {
+            backward = true;
+            break;
+        }
+    }
+    if(forward) return points[i];
+    else if(backward) return points[j];
+    else return undefined;
+}
+
+export {arcLinks, getJsonFromUrl, ellipticalArc, samples, intersect};
 

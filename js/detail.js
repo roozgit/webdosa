@@ -20,6 +20,26 @@ let defs = Symbol();
 let withinEdges = Symbol();
 let betweenEdges = Symbol();
 
+function gradientGenerator(layer1, layer2, color1, color2, dir) {
+    let grd = d3.select('#detailDefs').append('linearGradient')
+        .attr('id', `grad-${layer1}-${layer2}-${dir}`)
+        .attr("gradientUnits", "objectBoundingBox")
+        .attr('x1', "50%")
+        .attr('y1', "0%")
+        .attr('x2', "100%")
+        .attr('y2' , "0%");
+    grd.append("stop")
+        .attr('class', 'start')
+        .attr("offset", "0%")
+        .attr("stop-color", color1)
+        .attr("stop-opacity", 1);
+    grd.append("stop")
+        .attr('class', 'end')
+        .attr("offset", "100%")
+        .attr("stop-color", color2)
+        .attr("stop-opacity", 1);
+}
+
 class Detail {
     constructor(el, graph, width, height, margin) {
         this[nodeIds] = new Set();
@@ -33,7 +53,7 @@ class Detail {
             .attr('width', width + margin.right + margin.left)
             .attr('height', height + margin.top + margin.bottom);
 
-        this[defs] = this[svg].append('defs');
+        this[svg].append('defs').attr('id', "detailDefs");
         this[nodeGroup] = this[svg].append('g')
             .attr('id', "nodeGroup")
             .attr("transform",
@@ -323,7 +343,29 @@ class Detail {
 
              this[edgeGroup].selectAll('path')
                  .data(visibleArr, d => d.id)
-                 .attr('stroke', d => graph.layers.find(la => la.id===d.dlayers[0]).color);
+                 .attr('stroke', d => {
+                     if(d.dlayers[0]===d.dlayers[1])
+                         return graph.layers.find(la => la.id===d.dlayers[0]).color;
+                     else {
+                         if(graph.nodeMap.get(d.fromid).position.x <= graph.nodeMap.get(d.toid).position.x) {
+                             if(d3.select('#detailDefs').select(`#grad-${d.dlayers[0]}-${d.dlayers[1]}-lr`)
+                                 .empty()) {
+                                 gradientGenerator(d.dlayers[0], d.dlayers[1],
+                                     graph.layers.find(la => la.id===d.dlayers[0]).color,
+                                     graph.layers.find(la => la.id===d.dlayers[1]).color);
+                             }
+                             return `url(#grad-${d.dlayers[0]}-${d.dlayers[1]}-lr)`;
+                         } else {
+                             if(d3.select('#detailDefs').select(`#grad-${d.dlayers[0]}-${d.dlayers[1]}-rl`)
+                                 .empty()) {
+                                 gradientGenerator(d.dlayers[0], d.dlayers[1],
+                                     graph.layers.find(la => la.id===d.dlayers[1]).color,
+                                     graph.layers.find(la => la.id===d.dlayers[0]).color);
+                             }
+                             return `url(#grad-${d.dlayers[0]}-${d.dlayers[1]}-rl)`;
+                         }
+                     }
+                 });
 
              if(visibleArr.length > 0)
                  this[edgeGroup].selectAll('path')
@@ -332,13 +374,56 @@ class Detail {
                      .attr('id', d => d.id)
                      .attr('d', d => d.path)
                      .attr('fill', "none")
-                     .attr('stroke', d => graph.layers.find(la => la.id===d.dlayers[0]).color);
+                     .attr('stroke', d => {
+                         if(d.dlayers[0]===d.dlayers[1])
+                             return graph.layers.find(la => la.id===d.dlayers[0]).color;
+                         else {
+                             if(graph.nodeMap.get(d.fromid).position.x <= graph.nodeMap.get(d.toid).position.x) {
+                                 if(d3.select('#detailDefs').select(`#grad-${d.dlayers[0]}-${d.dlayers[1]}-lr`)
+                                     .empty()) {
+                                     gradientGenerator(d.dlayers[0], d.dlayers[1],
+                                         graph.layers.find(la => la.id===d.dlayers[0]).color,
+                                         graph.layers.find(la => la.id===d.dlayers[1]).color, "lr");
+                                 }
+                                 return `url(#grad-${d.dlayers[0]}-${d.dlayers[1]}-lr)`;
+                             } else {
+                                 if(d3.select('#detailDefs').select(`#grad-${d.dlayers[0]}-${d.dlayers[1]}-rl`)
+                                     .empty()) {
+                                     gradientGenerator(d.dlayers[0], d.dlayers[1],
+                                         graph.layers.find(la => la.id===d.dlayers[1]).color,
+                                         graph.layers.find(la => la.id===d.dlayers[0]).color, "rl");
+                                 }
+                                 return `url(#grad-${d.dlayers[0]}-${d.dlayers[1]}-rl)`;
+                             }
+                         }
+                     });
 
              this[withinEdges].set(layerId, this[edgeGroup].selectAll('path')
                  .filter(d => d.dlayers[0]===d.dlayers[1] && d.dlayers[0]===layerId).data());
 
              this[betweenEdges] =
                  this[edgeGroup].selectAll('path').filter(d => d.dlayers[0]!==d.dlayers[1]).data();
+
+             // let pathBreak = new Map();
+             // let colorBreak = new Map();
+             // this[edgeGroup].selectAll('path').filter(d => d.dlayers[0]!==d.dlayers[1])
+             //     .each(function(d) {
+             //         let pat = d3.select(this);
+             //         pathBreak.set(d.id, samples(pat.node(), 8));
+             //         colorBreak.set(d.id, interpolateRgb(
+             //             graph.layers.find(la => la.id===d.dlayers[0]).color,
+             //             graph.layers.find(la => la.id===d.dlayers[1]).color));
+             //     });
+             //
+             // for(let pat of pathBreak) {
+             //    this[edgeGroup].filter(d => d.id===pat[0]).remove();
+             //     this[edgeGroup].selectAll("path")
+             //         .data(quads(pat[1]))
+             //         .enter().append("path")
+             //         .style("fill", function(d) { return colorBreak.get(pat[0])(d.t); })
+             //         .style("stroke", function(d) { return colorBreak.get(pat[0])(d.t); })
+             //         .attr("d", function(d) { return lineJoin(d[0], d[1], d[2], d[3], 1); });
+             // }
 
              dispatch.call('overviewUpdate', this,
                  {within: this[withinEdges], between: this[betweenEdges]});

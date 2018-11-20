@@ -9,7 +9,7 @@ import {getJsonFromUrl} from "./util";
 
 let scWidgetWidth = 180;
 let detailWidth = 700;
-let infogWidth = 400;
+let infogWidth = 500;
 let height = 750;
 let widget, layerMgr, detail, aggregation, hgraph;
 

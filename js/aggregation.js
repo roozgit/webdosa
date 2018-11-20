@@ -1,5 +1,5 @@
 import d3 from 'd3-selection';
-import {arcLinks, ellipticalArc} from "./util";
+import {arcLinks, ellipticalArc, insideRect, intersect, samples} from "./util";
 import {drag} from "d3-drag";
 
 let svg = Symbol();
@@ -113,6 +113,7 @@ class Aggregation {
                         else
                             return arcLinks(sx,sy,tx,ty,1,quadSep);
                     });
+                pathUpdater();
             });
 
         this[boxNodes].selectAll('rect')
@@ -141,7 +142,6 @@ class Aggregation {
                 .data(allArr, d => d.source.id + "-" + d.target.id).exit()
                 .remove();
 
-
             this[boxLinks].selectAll('path')
                 .data(allArr, d => d.source.id + "-" + d.target.id).enter()
                 .append('path')
@@ -160,15 +160,36 @@ class Aggregation {
                 .attr("fill", "none")
                 .attr("stroke", d => d.source.color)
                 .attr('marker-end', d => {
-                    //console.log(d3.select('#arrowHead-' + d.source.id))
                     if(d3.select('#arrowHead-' + d.source.id).empty()) {
-                        console.log("empty");
                         markerGenerator(d.source.color, d.source.id);
                     }
                     return `url(#arrowHead-${d.source.id})`
                 });
-
         }
+
+        var pathUpdater = () => {
+            let rects = new Map();
+            let paths = new Map();
+            this[boxNodes].selectAll('rect').each(function(d) {
+                rects.set(d.id, d3.select(this).node().getBBox());
+            });
+            this[boxLinks].selectAll('path').filter(d => d.source.id!==d.target.id)
+                .each(function(d) {
+                    paths.set(d.source.id + "-" + d.target.id, samples(d3.select(this).node(),1));
+                });
+            for(let pat of paths) {
+                let patsplit = pat[0].split("-");
+                let b1 = patsplit[0];
+                let b2 = patsplit[1];
+                let isec1 = intersect(pat[1], rects.get(+b1));
+                let isec2 = intersect(pat[1], rects.get(+b2));
+                d3.select('#linker').append('circle').attr('cx', isec2[0])
+                    .attr('cy', isec2[1]).attr('fill', "blue").attr('r', 15)
+                console.log(isec1);
+
+            }
+        };
+        pathUpdater();
     }
 }
 
