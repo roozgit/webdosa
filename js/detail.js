@@ -404,27 +404,6 @@ class Detail {
              this[betweenEdges] =
                  this[edgeGroup].selectAll('path').filter(d => d.dlayers[0]!==d.dlayers[1]).data();
 
-             // let pathBreak = new Map();
-             // let colorBreak = new Map();
-             // this[edgeGroup].selectAll('path').filter(d => d.dlayers[0]!==d.dlayers[1])
-             //     .each(function(d) {
-             //         let pat = d3.select(this);
-             //         pathBreak.set(d.id, samples(pat.node(), 8));
-             //         colorBreak.set(d.id, interpolateRgb(
-             //             graph.layers.find(la => la.id===d.dlayers[0]).color,
-             //             graph.layers.find(la => la.id===d.dlayers[1]).color));
-             //     });
-             //
-             // for(let pat of pathBreak) {
-             //    this[edgeGroup].filter(d => d.id===pat[0]).remove();
-             //     this[edgeGroup].selectAll("path")
-             //         .data(quads(pat[1]))
-             //         .enter().append("path")
-             //         .style("fill", function(d) { return colorBreak.get(pat[0])(d.t); })
-             //         .style("stroke", function(d) { return colorBreak.get(pat[0])(d.t); })
-             //         .attr("d", function(d) { return lineJoin(d[0], d[1], d[2], d[3], 1); });
-             // }
-
              dispatch.call('overviewUpdate', this,
                  {within: this[withinEdges], between: this[betweenEdges]});
 

@@ -1,6 +1,10 @@
 import d3 from 'd3-selection';
 import {arcLinks, ellipticalArc, insideRect, intersect, samples} from "./util";
 import {drag} from "d3-drag";
+import {dispatch} from './index';
+import {scaleLinear, scaleLog, scaleSequential} from "d3-scale";
+import {interpolateBasis, interpolateNumber} from "d3-interpolate";
+import {range as d3range} from 'd3-array';
 
 let svg = Symbol();
 let boxLinks = Symbol();
@@ -8,6 +12,7 @@ let boxNodes = Symbol();
 let boxLables = Symbol();
 let swidth = Symbol();
 let sheight = Symbol();
+let amargin = Symbol();
 
 const quadSep = 60;
 const boxWidth = 150;
@@ -40,6 +45,8 @@ function markerGenerator(color, mid) {
 class Aggregation {
     constructor(el, features, width, height, margin) {
 
+        this[amargin] = margin;
+
         this[svg] = d3.select(el)
             .append('svg')
             .attr('id', 'svgAggregation')
@@ -61,7 +68,7 @@ class Aggregation {
         this[boxLinks] = this[svg].append('g')
             .attr('id', "linker");
 
-        //select boxes
+            //select boxes
         let aggControlsX = d3.select('#aggControls')
             .append('select')
             .style("position", "relative")
@@ -83,18 +90,23 @@ class Aggregation {
             .attr("value", d => d)
             .text(d => d);
 
-        aggControlsX.selectAll('option').filter(d => d==="lng").attr('selected', "selected");
-        aggControlsY.selectAll('option').filter(d => d==="lat").attr('selected', "selected");
+        aggControlsX.selectAll('option').filter(d => d==="index").attr('selected', "selected");
+        aggControlsY.selectAll('option').filter(d => d==="index").attr('selected', "selected");
     }
 
     /*
     fsel: feature selection function:
  */
-    updateOverview(overviewObj, graph, nodefsel, edgefsel) {
+    updateOverview(overviewObj, graph) {
         let within = overviewObj.within;
         let between = overviewObj.between;
         let laycopy = graph.layers.slice(1);
         let betweenMap = new Map();
+
+        //let interpolator = interpolateBasis(d3range(0, graph.edges.length));
+
+        let edgeScaler = scaleLog().domain([1,graph.edges.length])
+            .range([1,100]);
 
         between.forEach(btg => {
             let idl = btg.dlayers[0] + "-" + btg.dlayers[1];
@@ -129,6 +141,7 @@ class Aggregation {
 
         let allArr = withinAgg.concat(betweenAgg);
 
+        let mmargin = this[amargin];
         let boxDragger = drag()
             .on('drag', function() {
                 let item = d3.select(this);
@@ -136,6 +149,8 @@ class Aggregation {
                 item.data()[0].y = +d3.event.y;
                 item.attr('x', +d3.event.x)
                     .attr('y', +d3.event.y);
+
+                dispatch.call('dragBoxPlot', +item.attr('id').split("-")[1], +d3.event.x, +d3.event.y, mmargin);
 
                 d3.select('#linker').selectAll('path')
                     .filter(d => d.source.id === item.data()[0].id || d.target.id === item.data()[0].id)
@@ -148,7 +163,8 @@ class Aggregation {
                             return ellipticalArc(sx, sy, tx, ty, boxWidth, boxWidth/2, boxWidth/2, d.displacement.dir);
                         else
                             return arcLinks(sx,sy,tx,ty,1,quadSep);
-                    });
+                    })
+                    .attr('stroke-width', d => edgeScaler(d.value));
                 pathUpdater();
             });
 
@@ -164,12 +180,13 @@ class Aggregation {
             .attr('stroke-width', "5px")
             .call(boxDragger);
 
-        let svgc = this[svg];
         //draw diagrams inside boxes
-        this[boxNodes].selectAll('rect')
-            .each(function(d) {
-
-            });
+        this[boxNodes].selectAll('rect').each(function(d) {
+            if(d3.select('#boxplot-'+ d.id).empty())
+                dispatch.call('createBoxPlot', mmargin, d, d3.select(this).node().getBBox());
+            else
+                dispatch.call('updateBoxPlot', d.id, d);
+        });
 
         //End of draw diagrams inside boxes
 
@@ -182,12 +199,12 @@ class Aggregation {
                     .filter(d => d.id===la.id).attr('y');
             });
 
-            this[boxLinks].selectAll('path')
-                .data(allArr, d => d.source.id + "-" + d.target.id).exit()
-                .remove();
+            let boln = this[boxLinks].selectAll('path')
+                .data(allArr, d => d.source.id + "-" + d.target.id);
 
-            this[boxLinks].selectAll('path')
-                .data(allArr, d => d.source.id + "-" + d.target.id).enter()
+            boln.exit().remove();
+            boln.attr('stroke-width', d => edgeScaler(d.value));
+            boln.enter()
                 .append('path')
                 .attr('id', d => "bigPath-" + d.source.id + "-" + d.target.id )
                 .attr('class', "arrows")
@@ -201,7 +218,7 @@ class Aggregation {
                     else
                         return arcLinks(sx,sy,tx,ty,1,quadSep);
                 })
-                .attr("stroke-width", d => d.value)
+                .attr("stroke-width", d => edgeScaler(d.value))
                 .attr("fill", "none")
                 .attr("stroke", d => {
                     if(d.source.id === d.target.id)
@@ -213,7 +230,7 @@ class Aggregation {
                     }
                     return `url(#arrowHead-${d.source.id})`
                 });
-        }
+        } else this[boxLinks].selectAll('path').remove();
 
         var pathUpdater = () => {
             let rects = new Map();
@@ -239,7 +256,7 @@ class Aggregation {
                 this[boxLinks].append('path')
                     .datum(pat[1].pathData, d => d.source.id + "-" + d.target.id)
                     .attr('id', pat[0])
-                    .attr("stroke-width", d => d.value)
+                    .attr("stroke-width", d => edgeScaler(d.value))
                     .attr('d', newpat)
                     .attr("fill", "none")
                     .attr("stroke", d => d.source.color)
