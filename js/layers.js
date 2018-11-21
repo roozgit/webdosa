@@ -16,7 +16,11 @@ class LayerMgr {
         let layer = layers[layers.length-1];
         let trow = this[tbl].append('tr')
             .attr('id', "layer-"+layer.id);
+
         let tdarr = [layer.id, layer.label, layer.members.size];
+        trow.append('td').text(layer.id);
+
+
         trow.selectAll('td')
             .data(tdarr).enter()
             .append('td')
@@ -27,14 +31,11 @@ class LayerMgr {
     }
 
     updateLayer(layers) {
-        //let targetLayer = layers[layernum];
         this[tbl].selectAll('tr')
             .each(function(_, i) {
                 d3.select(this).select('td:nth-child(3)')
                     .text(layers[i].members.size);
-            })
-
-
+            });
     }
 }
 

@@ -5,6 +5,7 @@ import {drag} from "d3-drag";
 let svg = Symbol();
 let boxLinks = Symbol();
 let boxNodes = Symbol();
+let boxLables = Symbol();
 let swidth = Symbol();
 let sheight = Symbol();
 
@@ -37,7 +38,7 @@ function markerGenerator(color, mid) {
 }
 
 class Aggregation {
-    constructor(el, width, height, margin) {
+    constructor(el, features, width, height, margin) {
 
         this[svg] = d3.select(el)
             .append('svg')
@@ -60,25 +61,59 @@ class Aggregation {
         this[boxLinks] = this[svg].append('g')
             .attr('id', "linker");
 
+        //select boxes
+        let aggControlsX = d3.select('#aggControls')
+            .append('select')
+            .style("position", "relative")
+            .attr("id", "agxvar");
+
+        aggControlsX.selectAll("option")
+            .data(features).enter()
+            .append("option")
+            .attr("value", d => d)
+            .text(d => d);
+
+        let aggControlsY = d3.select('#aggControls')
+            .append('select')
+            .style("position", "relative")
+            .attr("id", "agyvar");
+        aggControlsY.selectAll("option")
+            .data(features).enter()
+            .append("option")
+            .attr("value", d => d)
+            .text(d => d);
+
+        aggControlsX.selectAll('option').filter(d => d==="lng").attr('selected', "selected");
+        aggControlsY.selectAll('option').filter(d => d==="lat").attr('selected', "selected");
     }
 
     /*
     fsel: feature selection function:
  */
-    updateOverview(overviewObj, graph, fsel) {
+    updateOverview(overviewObj, graph, nodefsel, edgefsel) {
         let within = overviewObj.within;
         let between = overviewObj.between;
-
         let laycopy = graph.layers.slice(1);
+        let betweenMap = new Map();
 
-        let betweenAgg = between.map(btg => {
-            return {
-                source: laycopy.find(la => la.id === btg.dlayers[0]),
-                target: laycopy.find(la => la.id === btg.dlayers[1]),
-                displacement : displacementBetween,
-                value: btg.length
-            };
+        between.forEach(btg => {
+            let idl = btg.dlayers[0] + "-" + btg.dlayers[1];
+            if(betweenMap.has(idl))
+                betweenMap.set(idl, betweenMap.get(idl).concat([btg]));
+            else
+                betweenMap.set(idl, [btg]);
         });
+
+        let betweenAgg = [];
+        for (let key of [...betweenMap.keys()]) {
+            let keys = key.split("-");
+            betweenAgg.push({
+                    source: laycopy.find(la => la.id === +keys[0]),
+                    target: laycopy.find(la => la.id === +keys[1]),
+                    displacement : displacementBetween,
+                    value: betweenMap.get(key).length
+                });
+        }
 
         let withinAgg = [...within.keys()].map(kw => {
             let dest = within.get(kw)[0];
@@ -91,6 +126,7 @@ class Aggregation {
                 };
             else return undefined;
         }).filter(arr => arr);
+
         let allArr = withinAgg.concat(betweenAgg);
 
         let boxDragger = drag()
@@ -126,8 +162,16 @@ class Aggregation {
             .attr('height', boxWidth)
             .attr('stroke', d => d.color)
             .attr('stroke-width', "5px")
-            //.attr('fill', "black")
             .call(boxDragger);
+
+        let svgc = this[svg];
+        //draw diagrams inside boxes
+        this[boxNodes].selectAll('rect')
+            .each(function(d) {
+
+            });
+
+        //End of draw diagrams inside boxes
 
         if(allArr.length > 0) {
             laycopy.forEach(la => {
@@ -157,7 +201,7 @@ class Aggregation {
                     else
                         return arcLinks(sx,sy,tx,ty,1,quadSep);
                 })
-                .attr("stroke-width", "35px")
+                .attr("stroke-width", d => d.value)
                 .attr("fill", "none")
                 .attr("stroke", d => {
                     if(d.source.id === d.target.id)
@@ -195,7 +239,7 @@ class Aggregation {
                 this[boxLinks].append('path')
                     .datum(pat[1].pathData, d => d.source.id + "-" + d.target.id)
                     .attr('id', pat[0])
-                    .attr("stroke-width", "35px")
+                    .attr("stroke-width", d => d.value)
                     .attr('d', newpat)
                     .attr("fill", "none")
                     .attr("stroke", d => d.source.color)
@@ -209,6 +253,7 @@ class Aggregation {
         };
         pathUpdater();
     }
+
 }
 
 export {Aggregation};

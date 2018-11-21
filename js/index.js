@@ -27,8 +27,8 @@ dispatch.on('dataLoad', function(graph) {
 
     detail = new Detail("#detail", graph, detailWidth, height,
         {top: 10, right: 20, bottom: 100, left: 100});
-    aggregation = new Aggregation("#infographic", infogWidth, height,
-        {top: 10, right: 20, bottom: 100, left: 100});
+    aggregation = new Aggregation("#infographic", Object.keys(hgraph.nodes[0].features),
+        infogWidth, height, {top: 10, right: 20, bottom: 100, left: 100});
 });
 
 dispatch.on('layerAdded', function(selectedIds) {

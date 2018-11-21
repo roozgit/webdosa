@@ -45,7 +45,8 @@ class HGraph {
 
         });
         this.layers.push(
-            {id:0, members: new Set([...this.nodeMap.keys()]), label:"background", color: "lightgrey"});
+            {id:0, members: new Set([...this.nodeMap.keys()]),
+                label:"background", color: "lightgrey", selected: false});
     }
 
     getAdj(node) {
@@ -72,7 +73,7 @@ class HGraph {
             newLayerMembers.add(nodeId);
         }
         this.layers.push({id: newLayerId, members: newLayerMembers, label: "layer-"+newLayerId,
-            color: this.colorScale(newLayerId-1)});
+            color: this.colorScale(newLayerId-1), selected: false});
     }
 
     updateLayer(layer, nodeIds) {
@@ -98,7 +99,13 @@ class HGraph {
                 this.layers[currentLayer].members.delete(nodeId);
             }
         }
+    }
 
+    selectLayer(layerId) {
+        this.layers.forEach(la => la.selected = false);
+        let selectedLayer = this.layers.find(la => la.id===layerId);
+        if(selectedLayer)
+            selectedLayer.selected = true;
     }
 }
 
