@@ -113,7 +113,6 @@ class HGraph {
             withinVisible: true,
             betweenVisible: true});
         let newLayer = this.layers[this.layers.length-1];
-
         //let newLayerMembers = new Set();
         for(let nodeId of nodeIds) {
             let allNodeLayers = this.nodeMap.get(nodeId).layers;
@@ -154,6 +153,27 @@ class HGraph {
                 this.removeEdges(nodeId, this.layers[currentLayer]);
             }
         }
+    }
+
+    deleteLayer(layerId) {
+        if(layerId===0) {
+            console.log("Can't delete base layer");
+            return false;
+        }
+        let idx = this.layers.findIndex(la => la.id=== layerId);
+        let layer = this.layers[idx];
+        for(let nodeId of layer.members) {
+            let node = this.nodeMap.get(nodeId);
+            let nodeLayers = node.layers;
+            let thisLayerIdx = nodeLayers.findIndex(la => la.id===layer.id);
+            nodeLayers.splice(thisLayerIdx, 1);
+            let newNodeLayerId = nodeLayers[nodeLayers.length-1];
+            let newNodeLayer = this.layers.find(la => la.id === newNodeLayerId);
+            newNodeLayer.members.add(nodeId);
+            this.addEdges(nodeId, newNodeLayer.members, newNodeLayer);
+        }
+        this.layers.splice(idx, 1);
+        return true;
     }
 
     selectLayer(layerId) {

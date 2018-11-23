@@ -3,7 +3,7 @@ import {Detail} from './detail.js';
 import {Widget} from './widget.js';
 import {Aggregation} from './aggregation.js'
 import Datastore from './datastore';
-import {LayerMgr} from './layers';
+import {LayerMgr, updateLayerView} from './layers';
 import {Plotter} from './plotter';
 import {getJsonFromUrl} from "./util";
 
@@ -16,8 +16,8 @@ let widget, layerMgr, detail, aggregation, svgplots, hgraph;
 
 svgplots = new Map();
 
-const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'overviewUpdate',
-    'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot');
+const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'layerDeleted',
+    'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot');
 
 //Register events and design workflow in a series of callbacks here
 dispatch.on('dataLoad', function(graph) {
@@ -25,9 +25,9 @@ dispatch.on('dataLoad', function(graph) {
     console.log(hgraph);
     widget = new Widget("#widgets", graph, scWidgetWidth, 2 *height /3,
         {top: 10, right: 20, bottom: 100, left: 10});
-    layerMgr = new LayerMgr("#layerMgr", graph, scWidgetWidth, height / 3,
+    layerMgr = new LayerMgr("#layerMgr", scWidgetWidth, height / 3,
         {top: 10, right: 20, bottom: 100, left: 10});
-    layerMgr.addLayer(graph.layers);
+    layerMgr.addLayer(hgraph, 0);
 
     detail = new Detail("#detail", graph, detailWidth, height,
         {top: 10, right: 20, bottom: 100, left: 100});
@@ -37,12 +37,17 @@ dispatch.on('dataLoad', function(graph) {
 
 dispatch.on('layerAdded', function(selectedIds) {
     hgraph.addLayer(selectedIds);
-    layerMgr.addLayer(hgraph.layers);
+    layerMgr.addLayer(hgraph, +this['layerId']);
 });
 
 dispatch.on('layerMoved', function(selectedIds) {
     hgraph.updateLayer(selectedIds.layer, selectedIds.nodeIds);
-    layerMgr.updateLayer(hgraph.layers, selectedIds.layer)
+    updateLayerView(hgraph.layers, selectedIds.layer)
+});
+
+dispatch.on('layerDeleted', function(layerId) {
+    hgraph.deleteLayer(layerId);
+    detail.removeBrush(layerId);
 });
 
 dispatch.on('overviewUpdate', function(overviewObj) {

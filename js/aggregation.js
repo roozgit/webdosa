@@ -104,12 +104,13 @@ class Aggregation {
         let betweenMap = new Map();
 
         //let interpolator = interpolateBasis(d3range(0, graph.edges.length));
-
         let edgeScaler = scaleLog().domain([1,graph.edges.length])
             .range([1,100]);
 
         between.forEach(btg => {
-            let idl = btg.dlayers[0] + "-" + btg.dlayers[1];
+            let branch = graph.edgeMap.get(btg);
+            let idl = branch.from.layers[branch.from.layers.length-1] +
+                "-" + branch.to.layers[branch.to.layers.length-1];
             if(betweenMap.has(idl))
                 betweenMap.set(idl, betweenMap.get(idl).concat([btg]));
             else

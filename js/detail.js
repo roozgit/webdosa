@@ -1,5 +1,5 @@
 import {scaleLinear} from 'd3-scale';
-import {extent} from 'd3-array';
+import {max as d3max, extent} from 'd3-array';
 import {axisBottom, axisLeft} from 'd3-axis';
 import {quadtree} from 'd3-quadtree';
 import d3 from 'd3-selection';
@@ -247,18 +247,21 @@ class Detail {
              .on('brush', brushed.bind(this))
              .on('end', emitData.bind(this));
 
-         this[brushes].push({id: this[brushes].length + 1, brush: brush});
-
+         let brushMaxId = this[brushes].length > 0 ? d3max(this[brushes].map(d => d.id)) : 0;
+         this[brushes].push({id: brushMaxId + 1, brush: brush});
          let curBrushes = this[brushes];
          let newBrushFlag = false;
          let brushingFlag = false;
          let layerId = 0;
 
          function brushStart() {
+             brushingFlag = false;
              layerId = +d3.select(this).attr('id').split("-")[1];
+             //console.log(layerId);
              newBrushFlag = !curBrushes.map(bru => bru.id).includes(layerId + 1);
+             //console.log(newBrushFlag)
              if(newBrushFlag)
-                 dispatch.call('layerAdded', this, new Set());
+                 dispatch.call('layerAdded', {'layerId': layerId}, new Set());
          }
 
          function brushed() {
@@ -377,15 +380,31 @@ class Detail {
                          }
                      });
 
+             d3.selectAll('#scatterPlot circle')
+                 .attr('stroke', d => {
+                     let nlayers = graph.nodeMap.get(d.data.id).layers;
+                     let nlayer = nlayers[nlayers.length-1];
+                     return graph.layers.find(lay => lay.id === nlayer).color;
+                 });
+
              dispatch.call('overviewUpdate', this,
                  {within : graph.layers.find(la => la.id===layerId).within,
                      between : graph.layers.find(la => la.id===layerId).between});
          }
 
          function emitData() {
+             // //special case
              if(!brushingFlag) {
                  graph.layers.pop();
                  curBrushes.pop();
+                 let tbl = document.getElementById("tblLayerMgr");
+                 for (let r = 0; r < tbl.rows.length; r++) {
+                     let rid = tbl.rows[r].cells[0].textContent;
+                     if (layerId === +rid) {
+                         tbl.rows[r].remove();
+                         break;
+                     }
+                 }
                  return;
              }
              let bru = d3.select(`#brush-${layerId}`);
@@ -402,10 +421,10 @@ class Detail {
              // Always draw brushes
              this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
 
-             d3.selectAll('#scatterPlot circle')
-                 .attr('stroke',d => {
-                     return graph.layers[Array.from(d.layers).pop()].color
-                 });
+             // d3.selectAll('#scatterPlot circle')
+             //     .attr('stroke',d => {
+             //         return graph.layers[Array.from(d.layers).pop()].color
+             //     });
          }
 
          // Find the nodes within the specified rectangle.
@@ -458,6 +477,18 @@ class Detail {
              .selectAll('.overlay')
              .style('pointer-events', "none");
 
+     }
+
+     removeBrush(brushId) {
+        let brushIds = this[brushes].map(d => d.id);
+        let bidx = this[brushes].findIndex(d => d.id === brushId);
+        this[brushes].splice(bidx, 1);
+        this[gBrushes].select('#brush-'+ brushId).remove();
+        if(brushId + 1 === d3max(brushIds)) {
+            this[gBrushes].select('#brush-'+ (brushId + 1))
+                .attr('id', "brush-" + brushId);
+            this[brushes].find(d => d.id === brushId + 1).id = brushId;
+        }
      }
 }
 
