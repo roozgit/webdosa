@@ -251,6 +251,7 @@ class Detail {
 
          let curBrushes = this[brushes];
          let newBrushFlag = false;
+         let brushingFlag = false;
          let layerId = 0;
 
          function brushStart() {
@@ -261,108 +262,84 @@ class Detail {
          }
 
          function brushed() {
+             brushingFlag = true;
              let extent = d3.event.selection;
 
              this[nodeIds] = search(this[points], this[quadTree],
                  extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
-             let visible = new Map();
+
              dispatch.call('layerMoved', this, {layer: layerId, nodeIds: this[nodeIds]});
 
-             for(let nodeId of this[nodeIds]) {
-                 let node = graph.nodeMap.get(nodeId);
-                 let tos = graph.adjList.get(nodeId);
-                 let froms = graph.revAdjList.get(nodeId);
-                 if(tos) {
-                     for (let tonode of tos) {
-                         let tonodeLayers = tonode.to.layers;
-                         let tonodelayer = tonodeLayers[tonodeLayers.length-1];
-                         let destlayer = this[nodeIds].has(tonode.to.data.id) ? layerId : tonodelayer;
-                         if(destlayer < 1) continue;
-
-                         let topos = tonode.to.position;
-                         let nume = tonode.via.length;
-
-                         let toPaths = arcLinks(xs(node.position.x), ys(node.position.y),
-                             xs(topos.x), ys(topos.y), nume, 15);
-                         for (let p = 0; p < toPaths.length; p++)
-                             visible.set(tonode.via[p].data.id,
-                                 {id: tonode.via[p].data.id, path: toPaths[p],
-                                     dlayers: [layerId, destlayer],
-                                     fromid: nodeId, toid: tonode.to.data.id});
-                     }
+             let visibleSet = new Set();
+             for(let lay of graph.layers) {
+                 if(lay.withinVisible) {
+                     for(let branchId of lay.within)
+                         visibleSet.add(branchId);
                  }
-                 if(froms) {
-                     for (let fromnode of froms) {
-                         let fromnodeLayers = fromnode.from.layers;
-                         let fromnodelayer = fromnodeLayers[fromnodeLayers.length-1];
-                         let destlayer = this[nodeIds].has(fromnode.from.data.id) ? layerId : fromnodelayer;
-                         if(destlayer < 1) continue;
-
-                         let frompos = fromnode.from.position;
-                         let nume = fromnode.via.length;
-
-                         let fromPaths = arcLinks(xs(frompos.x), ys(frompos.y),
-                             xs(node.position.x), ys(node.position.y), nume, 15);
-                         for (let p = 0; p < fromPaths.length; p++)
-                             visible.set(fromnode.via[p].data.id,
-                                 {id: fromnode.via[p].data.id, path: fromPaths[p],
-                                     dlayers: [destlayer, layerId],
-                                     fromid: fromnode.from.data.id, toid: nodeId});
-                     }
+                 if(lay.betweenVisible) {
+                     [...lay.between].filter(branchId => {
+                         let branch = graph.edgeMap.get(branchId);
+                         let slayer = branch.from.layers[branch.from.layers.length-1];
+                         let tlayer = branch.to.layers[branch.to.layers.length-1];
+                         let gslayer = graph.layers.find(la => la.id===slayer);
+                         let gtlayer = graph.layers.find(la => la.id===tlayer);
+                         return gslayer.betweenVisible && gtlayer.betweenVisible;
+                     }).forEach(branchId => visibleSet.add(branchId));
                  }
              }
 
-             for(let wed of this[withinEdges]) {
-                 if(wed[0] !== layerId) {
-                     wed[1].forEach(we => {
-                         if(visible.has(we.id)) {
-                             we.dlayers = visible.get(we.id).dlayers;
-                         }
-                         visible.set(we.id, we)
-                     });
-                 } else {
-                     wed[1].forEach(we => {
-                         let a1 = Array.from(graph.nodeMap.get(we.fromid).layers).pop();
-                         let a2 = Array.from(graph.nodeMap.get(we.toid).layers).pop();
-                         we.dlayers = [a1, a2];
-                     })
+             let visibleMap = new Map();
+             for(let branchId of visibleSet) {
+                 let branch = graph.edgeMap.get(branchId);
+                 let source = branch.from.data.id;
+                 let dest = branch.to.data.id;
+                 let madeupkey = source+"-"+dest;
+                 if(!visibleMap.has(madeupkey))
+                     visibleMap.set(madeupkey, [branch]);
+                 else visibleMap.set(madeupkey, visibleMap.get(madeupkey).concat([branch]));
+             }
+             let visibleArr = [];
+             for(let branchList of visibleMap) {
+                 let sx = branchList[1][0].from.position.x;
+                 let sy = branchList[1][0].from.position.y;
+                 let tx = branchList[1][0].to.position.x;
+                 let ty = branchList[1][0].to.position.y;
+                 let nume = branchList[1].length;
+                 let paths = arcLinks(xs(sx), ys(sy), xs(tx), ys(ty), nume, 15);
+                 for(let patIdx =0; patIdx < paths.length; patIdx++) {
+                     visibleArr.push({id: branchList[1][patIdx].data.id, path: paths[patIdx],
+                         branch: branchList[1][patIdx]});
                  }
              }
-
-             this[betweenEdges].forEach(bed => {
-                 if(bed.dlayers[0] !== layerId && bed.dlayers[1] !== layerId)
-                     visible.set(bed.id, bed);
-             });
-
-
-             let visibleArr = [...visible].map(d => d[1]);
 
              this[edgeGroup].selectAll('path')
-                 .data(visibleArr, d=>d.id)
+                 .data(visibleArr, d => d.id)
                  .exit().remove();
 
              this[edgeGroup].selectAll('path')
                  .data(visibleArr, d => d.id)
                  .attr('stroke', d => {
-                     if(d.dlayers[0]===d.dlayers[1])
-                         return graph.layers.find(la => la.id===d.dlayers[0]).color;
+                     let slayer = d.branch.from.layers[d.branch.from.layers.length-1];
+                     let tlayer = d.branch.to.layers[d.branch.to.layers.length-1];
+                     if(slayer === tlayer)
+                         return graph.layers.find(la => la.id=== slayer).color;
                      else {
-                         if(graph.nodeMap.get(d.fromid).position.x <= graph.nodeMap.get(d.toid).position.x) {
-                             if(d3.select('#detailDefs').select(`#grad-${d.dlayers[0]}-${d.dlayers[1]}-lr`)
+                         if(d.branch.from.position.x <=  d.branch.to.position.x) {
+                             if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-lr`)
                                  .empty()) {
-                                 gradientGenerator(d.dlayers[0], d.dlayers[1],
-                                     graph.layers.find(la => la.id===d.dlayers[0]).color,
-                                     graph.layers.find(la => la.id===d.dlayers[1]).color);
+                                 gradientGenerator(slayer, tlayer,
+                                     graph.layers.find(la => la.id===slayer).color,
+                                     graph.layers.find(la => la.id===tlayer).color, "lr");
                              }
-                             return `url(#grad-${d.dlayers[0]}-${d.dlayers[1]}-lr)`;
+                             return `url(#grad-${slayer}-${tlayer}-lr)`;
                          } else {
-                             if(d3.select('#detailDefs').select(`#grad-${d.dlayers[0]}-${d.dlayers[1]}-rl`)
+                             if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-rl`)
                                  .empty()) {
-                                 gradientGenerator(d.dlayers[0], d.dlayers[1],
-                                     graph.layers.find(la => la.id===d.dlayers[1]).color,
-                                     graph.layers.find(la => la.id===d.dlayers[0]).color);
+                                 gradientGenerator(slayer, tlayer,
+                                     graph.layers.find(la => la.id===tlayer).color,
+                                     graph.layers.find(la => la.id===slayer).color, "rl");
                              }
-                             return `url(#grad-${d.dlayers[0]}-${d.dlayers[1]}-rl)`;
+                             return `url(#grad-${slayer}-${tlayer}-rl)`;
                          }
                      }
                  });
@@ -375,41 +352,42 @@ class Detail {
                      .attr('d', d => d.path)
                      .attr('fill', "none")
                      .attr('stroke', d => {
-                         if(d.dlayers[0]===d.dlayers[1])
-                             return graph.layers.find(la => la.id===d.dlayers[0]).color;
+                         let slayer = d.branch.from.layers[d.branch.from.layers.length-1];
+                         let tlayer = d.branch.to.layers[d.branch.to.layers.length-1];
+                         if(slayer === tlayer)
+                             return graph.layers.find(la => la.id=== slayer).color;
                          else {
-                             if(graph.nodeMap.get(d.fromid).position.x <= graph.nodeMap.get(d.toid).position.x) {
-                                 if(d3.select('#detailDefs').select(`#grad-${d.dlayers[0]}-${d.dlayers[1]}-lr`)
+                             if(d.branch.from.position.x <=  d.branch.to.position.x) {
+                                 if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-lr`)
                                      .empty()) {
-                                     gradientGenerator(d.dlayers[0], d.dlayers[1],
-                                         graph.layers.find(la => la.id===d.dlayers[0]).color,
-                                         graph.layers.find(la => la.id===d.dlayers[1]).color, "lr");
+                                     gradientGenerator(slayer, tlayer,
+                                         graph.layers.find(la => la.id===slayer).color,
+                                         graph.layers.find(la => la.id===tlayer).color, "lr");
                                  }
-                                 return `url(#grad-${d.dlayers[0]}-${d.dlayers[1]}-lr)`;
+                                 return `url(#grad-${slayer}-${tlayer}-lr)`;
                              } else {
-                                 if(d3.select('#detailDefs').select(`#grad-${d.dlayers[0]}-${d.dlayers[1]}-rl`)
+                                 if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-rl`)
                                      .empty()) {
-                                     gradientGenerator(d.dlayers[0], d.dlayers[1],
-                                         graph.layers.find(la => la.id===d.dlayers[1]).color,
-                                         graph.layers.find(la => la.id===d.dlayers[0]).color, "rl");
+                                     gradientGenerator(slayer, tlayer,
+                                         graph.layers.find(la => la.id===tlayer).color,
+                                         graph.layers.find(la => la.id===slayer).color, "rl");
                                  }
-                                 return `url(#grad-${d.dlayers[0]}-${d.dlayers[1]}-rl)`;
+                                 return `url(#grad-${slayer}-${tlayer}-rl)`;
                              }
                          }
                      });
 
-             this[withinEdges].set(layerId, this[edgeGroup].selectAll('path')
-                 .filter(d => d.dlayers[0]===d.dlayers[1] && d.dlayers[0]===layerId).data());
-
-             this[betweenEdges] =
-                 this[edgeGroup].selectAll('path').filter(d => d.dlayers[0]!==d.dlayers[1]).data();
-
              dispatch.call('overviewUpdate', this,
-                 {within: this[withinEdges], between: this[betweenEdges]});
-
+                 {within : graph.layers.find(la => la.id===layerId).within,
+                     between : graph.layers.find(la => la.id===layerId).between});
          }
 
          function emitData() {
+             if(!brushingFlag) {
+                 graph.layers.pop();
+                 curBrushes.pop();
+                 return;
+             }
              let bru = d3.select(`#brush-${layerId}`);
              // let brushSize = bru.select('rect.selection').node().getBBox();
              // if(brushSize.width===0 || brushSize.length===0) {
