@@ -238,10 +238,6 @@ class Detail {
      createBrush(graph, xs, ys) {
          let bbox = d3.select('#scatterPlot').node().getBBox();
          let brush = d3brush()
-             // .filter(function() {
-             //     console.log(event.button);
-             //     return !event.button;
-             // })
              .extent([[bbox.x, bbox.y], [bbox.x + bbox.width, bbox.y + bbox.height]])
              .on('start', brushStart)
              .on('brush', brushed.bind(this))
@@ -257,9 +253,7 @@ class Detail {
          function brushStart() {
              brushingFlag = false;
              layerId = +d3.select(this).attr('id').split("-")[1];
-             //console.log(layerId);
              newBrushFlag = !curBrushes.map(bru => bru.id).includes(layerId + 1);
-             //console.log(newBrushFlag)
              if(newBrushFlag)
                  dispatch.call('layerAdded', {'layerId': layerId}, new Set());
          }
@@ -450,11 +444,9 @@ class Detail {
              .selectAll('[class^=brush]')
              .data(this[brushes], d => d.id);
 
-         // brushSelection.exit()
-         //     .remove();
          // Set up new brushes
          brushSelection.enter()
-             .insert('g', ":first-child")//, '.brush-'+ (xvar ? xvar.value : "lng")  + '-' + (yvar ? yvar.value : "lat"))
+             .insert('g', ":first-child")
              .attr('class', 'brush-'+ (xvar ? xvar.value : "lng")  + '-' + (yvar ? yvar.value : "lat"))
              .attr('id', function(brush){ return "brush-" + brush.id; })
              .each(function(brushObject) {

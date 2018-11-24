@@ -155,7 +155,6 @@ class Aggregation {
                     }
                 }
                 let res = [];
-                //if(betMap.size===0) return res;
                 for(let bm of betMap) {
                     let madeupId = bm[0].split("-");
                     let sid = +madeupId[0];
@@ -172,6 +171,16 @@ class Aggregation {
         return withinAgg.concat(betweenAgg);
     }
 
+    removeLayerBox(layerId) {
+        this[boxNodes].select('rect#box-'+layerId).remove();
+        this[boxLinks].selectAll('path').filter(d => {
+            if(d.source.id === layerId || d.target.id === layerId)
+                return true;
+        }).remove();
+        d3.selectAll('.aggValues').remove();
+        d3.select('#boxplot-'+layerId).remove();
+    }
+
     updateOverview(graph) {
         let laycopy = graph.layers.filter(lay => lay.withinVisible && lay.betweenVisible);
         let allArr = this.calcAggregates(graph, this[arrowFunc]);
@@ -185,8 +194,10 @@ class Aggregation {
                 d3sum(graph.edges.map(dv => dv.features[this[arrowFeature]]))];
         }
 
+        //let rangeSelector = this[arrowFeature]==="count" ? [1,75] : [0,100];
+
         this[edgeScaler] = scaleLog().domain(extentSelector)
-            .range([0,100]).clamp(true);
+            .range([1,80]).clamp(true);
 
         let mmargin = this[amargin];
         let boxDragger = drag()
@@ -314,6 +325,22 @@ class Aggregation {
                         return `url(#arrowHead-${d.source.id})`
                     });
             }
+            d3.selectAll('.aggValues').remove();
+            this[boxLinks].selectAll('path')
+                .each(function(d) {
+                    let pathEl = d3.select(this).node();
+                    let evalue = d.value;
+                    let midpoint = pathEl.getPointAtLength(pathEl.getTotalLength()/2);
+
+                    let valueLabel = d3.select('#linker').append('text')
+                        .attr('class', "aggValues")
+                        .attr('x', midpoint.x)
+                        .attr('y', midpoint.y)
+                        .attr('font-size', "2em")
+                        .text(evalue)
+                        .style('fill', "white");
+                    valueLabel.raise();
+                });
         };
         pathUpdater();
 

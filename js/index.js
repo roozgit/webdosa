@@ -49,6 +49,7 @@ dispatch.on('layerMoved', function(selectedIds) {
 dispatch.on('layerDeleted', function(layerId) {
     hgraph.deleteLayer(layerId);
     detail.removeBrush(layerId);
+    aggregation.removeLayerBox(layerId);
 });
 
 dispatch.on('overviewUpdate', function() {
