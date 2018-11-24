@@ -101,7 +101,8 @@ class Detail {
 
         detailControlsY.on('change', () => {
             let feat = detailControlsY.node().value;
-            graph.nodes.forEach(n => n.position.y = feat==="lat" ? n.features[feat] : -n.features[feat]);
+            //graph.nodes.forEach(n => n.position.y = feat==="lat" ? -n.features[feat] : n.features[feat]);
+            graph.nodes.forEach(n => n.position.y = n.features[feat]);
             redraw.call(this, true);
         });
 
@@ -113,7 +114,7 @@ class Detail {
                 .range([0, width]);
             let ys = scaleLinear()
                 .domain(extent(yPos))
-                .range([0, height]);
+                .range([height, 0]);
 
             if(updateMode) this[nodeGroup].select('g#axisLeft').remove();
             this[nodeGroup].append('g')
@@ -128,17 +129,17 @@ class Detail {
                 .attr("transform", "translate(0," + height + ")")
                 .call(axisBottom(xs));
 
-            if (updateMode) this[nodeGroup].select('text#leftAxisText').remove();
-            this[nodeGroup].append('text')
-                .attr('id', "leftAxisText")
-                .attr('transform', "rotate(-90)")
-                .attr('y', 0 - margin.left)
-                .attr('x', 0 - (height / 2))
-                .attr('dy', "1em")
-                .attr('pointer-events', "none")
-                .style('text-anchor', "middle")
-                .style('fill', "lightgray")
-                .text("Y");
+            //if (updateMode) this[nodeGroup].select('text#leftAxisText').remove();
+            // this[nodeGroup].append('text')
+            //     .attr('id', "leftAxisText")
+            //     .attr('transform', "rotate(-90)")
+            //     .attr('y', 0 - margin.left)
+            //     .attr('x', 0 - (height / 2))
+            //     .attr('dy', "1em")
+            //     .attr('pointer-events', "none")
+            //     .style('text-anchor', "middle")
+            //     .style('fill', "lightgray")
+            //     .text("Y");
 
             d3.selectAll('.tick')
                 .attr('pointer-events', "none");
@@ -284,13 +285,15 @@ class Detail {
                      }).forEach(branchId => visibleSet.add(branchId));
                  }
              }
-
+             //Should we use id or position. When there is a lot of overlap on nodes,
+             //position seems more apt
              let visibleMap = new Map();
              for(let branchId of visibleSet) {
                  let branch = graph.edgeMap.get(branchId);
-                 let source = branch.from.data.id;
-                 let dest = branch.to.data.id;
-                 let madeupkey = source+"-"+dest;
+                 let source = branch.from;//.data.id;
+                 let dest = branch.to;//.data.id;
+                 let madeupkey = `(${Math.floor(source.position.x)}, ${Math.floor(source.position.y)}`+
+                     `-(${Math.floor(dest.position.x)}, ${Math.floor(dest.position.y)}`;
                  if(!visibleMap.has(madeupkey))
                      visibleMap.set(madeupkey, [branch]);
                  else visibleMap.set(madeupkey, visibleMap.get(madeupkey).concat([branch]));
@@ -386,7 +389,7 @@ class Detail {
 
          function emitData() {
              // //special case
-             if(!brushingFlag) {
+             if(!brushingFlag && newBrushFlag) {
                  graph.layers.pop();
                  curBrushes.pop();
                  let tbl = document.getElementById("tblLayerMgr");
