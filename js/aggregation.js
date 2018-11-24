@@ -4,7 +4,7 @@ import {drag} from "d3-drag";
 import {dispatch} from './index';
 import {scaleLinear, scaleLog, scaleSequential} from "d3-scale";
 import {interpolateBasis, interpolateNumber} from "d3-interpolate";
-import {range as d3range} from 'd3-array';
+import {sum as d3sum, min as d3min} from 'd3-array';
 
 let svg = Symbol();
 let boxLinks = Symbol();
@@ -13,6 +13,12 @@ let boxLables = Symbol();
 let swidth = Symbol();
 let sheight = Symbol();
 let amargin = Symbol();
+let aggControlsX = Symbol();
+let aggControlsY = Symbol();
+let aggEdges = Symbol();
+let arrowFeature = Symbol();
+let arrowFunc = Symbol();
+let edgeScaler = Symbol();
 
 const quadSep = 60;
 const boxWidth = 150;
@@ -43,9 +49,10 @@ function markerGenerator(color, mid) {
 }
 
 class Aggregation {
-    constructor(el, features, width, height, margin) {
-
+    constructor(el, graph, features, edgeFeatures, width, height, margin) {
         this[amargin] = margin;
+        this[arrowFunc] = x => [...x].length;
+        this[arrowFeature] = "count";
 
         this[svg] = d3.select(el)
             .append('svg')
@@ -69,83 +76,122 @@ class Aggregation {
             .attr('id', "linker");
 
             //select boxes
-        let aggControlsX = d3.select('#aggControls')
+        this[aggControlsX] = d3.select('#aggControls')
             .append('select')
             .style("position", "relative")
-            .attr("id", "agxvar");
+            .attr("id", "agxvar")
+            .style('visibility', "hidden");
 
-        aggControlsX.selectAll("option")
+        this[aggControlsX].selectAll("option")
             .data(features).enter()
             .append("option")
             .attr("value", d => d)
             .text(d => d);
 
-        let aggControlsY = d3.select('#aggControls')
+        this[aggControlsY] = d3.select('#aggControls')
             .append('select')
             .style("position", "relative")
-            .attr("id", "agyvar");
-        aggControlsY.selectAll("option")
+            .attr("id", "agyvar")
+            .style('visibility', "hidden");
+        this[aggControlsY].selectAll("option")
             .data(features).enter()
             .append("option")
             .attr("value", d => d)
             .text(d => d);
 
-        aggControlsX.selectAll('option').filter(d => d==="index").attr('selected', "selected");
-        aggControlsY.selectAll('option').filter(d => d==="index").attr('selected', "selected");
+        this[aggEdges] = d3.select('#aggControls')
+            .append('select')
+            .style("position", "relative")
+            .attr("id", "agEdges")
+            .style('visibility', "hidden")
+            .on('change', () => {
+                this[arrowFeature] = this[aggEdges].node().value;
+                if(this[arrowFeature] === "count") {
+                    this[arrowFunc] = x => [...x].length;
+                }
+                else {
+                    this[arrowFunc] = x => d3sum([...x]
+                        .map(dv => graph.edgeMap.get(dv).features[this[arrowFeature]]));
+                }
+                this.updateOverview(graph);
+            });
+        this[aggEdges].selectAll("option")
+            .data(edgeFeatures.concat(["count"])).enter()
+            .append("option")
+            .attr("value", d => d)
+            .text(d => d);
     }
 
-    /*
-    fsel: feature selection function:
- */
-    updateOverview(overviewObj, graph) {
-        let within = overviewObj.within;
-        let between = overviewObj.between;
-        let laycopy = graph.layers.slice(1);
-        let betweenMap = new Map();
+    calcAggregates(graph, ffunc) {
+        let layerData = graph.layers.filter(lay => lay.withinVisible && lay.betweenVisible);
+        let withinAgg = layerData.map(lay => [lay.id, lay.within])
+            .map(wit => {
+                let dest = wit[0];
+                if(dest)
+                    return {
+                        source: layerData.find(la => la.id === wit[0]),
+                        target: layerData.find(la => la.id === wit[0]),
+                        displacement : displacementSelf[(wit[0]===0 ? 0 : (wit[0]-1)) % 4],
+                        value: ffunc(wit[1])
+                    };
+                else return undefined;
+            }).filter(arr => arr);
 
-        //let interpolator = interpolateBasis(d3range(0, graph.edges.length));
-        let edgeScaler = scaleLog().domain([1,graph.edges.length])
-            .range([1,100]);
+        let betweenAgg = layerData.map(lay => [lay.id, lay.between])
+            .map(wit => {
+                let betMap = new Map();
+                for(let d of wit[1]) {
+                    let branch = graph.edgeMap.get(d);
+                    let slayerId = branch.from.layers[branch.from.layers.length-1];
+                    if(slayerId !== wit[0]) continue;
+                    let tlayerId = branch.to.layers[branch.to.layers.length-1];
+                    if(tlayerId === wit[0]) continue;
+                    let tlayer = graph.layers.find(lx => lx.id===tlayerId);
+                    if(tlayer.betweenVisible) {
+                        let madeupId = slayerId+"-"+tlayerId;
+                        betMap.has(madeupId) ?
+                            betMap.set(madeupId, betMap.get(madeupId).concat([d])) :
+                            betMap.set(madeupId, [d]);
+                    }
+                }
+                let res = [];
+                //if(betMap.size===0) return res;
+                for(let bm of betMap) {
+                    let madeupId = bm[0].split("-");
+                    let sid = +madeupId[0];
+                    let tid = +madeupId[1];
+                    res.push({
+                        source: layerData.find(la => la.id === sid),
+                        target: layerData.find(la => la.id === tid),
+                        displacement: displacementBetween,
+                        value: ffunc(bm[1])
+                    });
+                }
+                return res;
+            }).reduce((acc, cur) => acc.concat(cur), []);
+        return withinAgg.concat(betweenAgg);
+    }
 
-        between.forEach(btg => {
-            let branch = graph.edgeMap.get(btg);
-            let idl = branch.from.layers[branch.from.layers.length-1] +
-                "-" + branch.to.layers[branch.to.layers.length-1];
-            if(betweenMap.has(idl))
-                betweenMap.set(idl, betweenMap.get(idl).concat([btg]));
-            else
-                betweenMap.set(idl, [btg]);
-        });
+    updateOverview(graph) {
+        let laycopy = graph.layers.filter(lay => lay.withinVisible && lay.betweenVisible);
+        let allArr = this.calcAggregates(graph, this[arrowFunc]);
 
-        let betweenAgg = [];
-        for (let key of [...betweenMap.keys()]) {
-            let keys = key.split("-");
-            betweenAgg.push({
-                    source: laycopy.find(la => la.id === +keys[0]),
-                    target: laycopy.find(la => la.id === +keys[1]),
-                    displacement : displacementBetween,
-                    value: betweenMap.get(key).length
-                });
+        let extentSelector;
+        if(this[arrowFeature] === "count") {
+            extentSelector = [1,graph.edges.length];
+        }
+        else {
+            extentSelector = [d3min(graph.edges.map(dv => dv.features[this[arrowFeature]])),
+                d3sum(graph.edges.map(dv => dv.features[this[arrowFeature]]))];
         }
 
-        let withinAgg = [...within.keys()].map(kw => {
-            let dest = within.get(kw)[0];
-            if(dest)
-                return {
-                    source: laycopy.find(la => la.id === dest.dlayers[0]),
-                    target: laycopy.find(la => la.id === dest.dlayers[0]),
-                    displacement : displacementSelf[(dest.dlayers[0]-1) % 4],
-                    value: within.get(kw).length
-                };
-            else return undefined;
-        }).filter(arr => arr);
-
-        let allArr = withinAgg.concat(betweenAgg);
+        this[edgeScaler] = scaleLog().domain(extentSelector)
+            .range([0,100]).clamp(true);
 
         let mmargin = this[amargin];
         let boxDragger = drag()
-            .on('drag', function() {
-                let item = d3.select(this);
+            .on('drag', function(dat) {
+                let item = d3.select('#box-'+dat.id);
                 item.data()[0].x = +d3.event.x;
                 item.data()[0].y = +d3.event.y;
                 item.attr('x', +d3.event.x)
@@ -165,9 +211,9 @@ class Aggregation {
                         else
                             return arcLinks(sx,sy,tx,ty,1,quadSep);
                     })
-                    .attr('stroke-width', d => edgeScaler(d.value));
+                    .attr('stroke-width', d => this[edgeScaler](d.value));
                 pathUpdater();
-            });
+            }.bind(this));
 
         this[boxNodes].selectAll('rect')
             .data(laycopy, la=>la.id).enter()
@@ -194,17 +240,17 @@ class Aggregation {
         if(allArr.length > 0) {
             laycopy.forEach(la => {
                 la.x = this[boxNodes].selectAll('rect')
-                    .filter(d => d.id===la.id).attr('x');
+                    .filter(d => d.id === la.id).attr('x');
 
                 la.y = this[boxNodes].selectAll('rect')
-                    .filter(d => d.id===la.id).attr('y');
+                    .filter(d => d.id === la.id).attr('y');
             });
 
             let boln = this[boxLinks].selectAll('path')
                 .data(allArr, d => d.source.id + "-" + d.target.id);
 
             boln.exit().remove();
-            boln.attr('stroke-width', d => edgeScaler(d.value));
+            boln.attr('stroke-width', d => this[edgeScaler](d.value));
             boln.enter()
                 .append('path')
                 .attr('id', d => "bigPath-" + d.source.id + "-" + d.target.id )
@@ -219,7 +265,7 @@ class Aggregation {
                     else
                         return arcLinks(sx,sy,tx,ty,1,quadSep);
                 })
-                .attr("stroke-width", d => edgeScaler(d.value))
+                .attr("stroke-width", d => this[edgeScaler](d.value))
                 .attr("fill", "none")
                 .attr("stroke", d => {
                     if(d.source.id === d.target.id)
@@ -242,7 +288,7 @@ class Aggregation {
             this[boxLinks].selectAll('path').filter(d => d.source.id!==d.target.id)
                 .each(function(d) {
                     paths.set(d.source.id + "-" + d.target.id,
-                        {pathBreak: samples(d3.select(this).node(), 8), pathData: d}
+                        {pathBreak: samples(d3.select(this).node(), 12), pathData: d}
                     );
                     d3.select(this).remove();
                 });
@@ -257,7 +303,7 @@ class Aggregation {
                 this[boxLinks].append('path')
                     .datum(pat[1].pathData, d => d.source.id + "-" + d.target.id)
                     .attr('id', pat[0])
-                    .attr("stroke-width", d => edgeScaler(d.value))
+                    .attr("stroke-width", d => this[edgeScaler](d.value))
                     .attr('d', newpat)
                     .attr("fill", "none")
                     .attr("stroke", d => d.source.color)
@@ -270,6 +316,13 @@ class Aggregation {
             }
         };
         pathUpdater();
+
+        this[aggControlsX].style('visibility', "visible");
+        this[aggControlsY].style('visibility', "visible");
+        this[aggEdges].style('visibility', "visible");
+        this[aggControlsX].selectAll('option').filter(d => d==="index").attr('selected', "selected");
+        this[aggControlsY].selectAll('option').filter(d => d==="index").attr('selected', "selected");
+        this[aggEdges].selectAll('option').filter(d => d==="count").attr('selected', "selected");
     }
 
 }

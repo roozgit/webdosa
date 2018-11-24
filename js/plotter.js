@@ -29,7 +29,7 @@ class Plotter {
 
         this[svg].append('text')
             .attr('x', this.pwidth /2 - margin)
-            .attr('y', margin)
+            .attr('y', this.pheight - margin)
             .text(label)
             .style('fill', color);
     }
@@ -70,7 +70,7 @@ class Plotter {
                     .attr('cy', d => d[1])
                     .attr('stroke', "gray")
                     .attr('r', 1)
-                    .attr('fill', "gray");
+                    .attr('fill', this[pcolor]);
         }
     }
 

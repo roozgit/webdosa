@@ -21,7 +21,11 @@ class LayerMgr {
         trow.append('td').text(layer.id)
             .on('click', function() {
                 layer.selected = !layer.selected;
-                d3.select(this).style('background-color', () => layer.selected ? "red" : "black");
+                d3.select('#tblLayerMgr')
+                    .selectAll('tr')
+                    .selectAll('td:nth-child(1)')
+                    .style('background-color', "black");
+                d3.select(this).style('background-color', "red");
             });
 
         //layer label -2
@@ -43,28 +47,34 @@ class LayerMgr {
             })
             .style('background-color', layer.color);
 
-        //layer delete -4
-        trow.append('td')
-            .attr('class','fa fa-trash')
-            .on("click",function() {
-                dispatch.call('layerDeleted', this, layerId);
-                d3.select(this).node().parentNode.remove();
-                updateLayerView(graph.layers);
-            });
+        if(layerId > 0) {
+            //layer delete -4
+            trow.append('td')
+                .attr('class', 'fa fa-trash')
+                .on("click", function () {
+                    if (layerId > 0) {
+                        dispatch.call('layerDeleted', this, layerId);
+                        d3.select(this).node().parentNode.remove();
+                        updateLayerView(graph.layers);
+                    } else {
+                        alert("Can't delete layer this layer!");
+                    }
+                });
 
-        //layer raise -5
-        trow.append('td')
-            .attr('class','fa fa-arrow-up')
-            .on("click",function(){
-                console.log("clicked me? up")
-            });
+            //layer raise -5
+            trow.append('td')
+                .attr('class', 'fa fa-arrow-up')
+                .on("click", function () {
+                    console.log("clicked me? up")
+                });
 
-        //layer lower -6
-        trow.append('td')
-            .attr('class','fa fa-arrow-down')
-            .on("click",function(){
-                console.log("clicked me? down")
-            });
+            //layer lower -6
+            trow.append('td')
+                .attr('class', 'fa fa-arrow-down')
+                .on("click", function () {
+                    console.log("clicked me? down")
+                });
+        }
     }
 }
 

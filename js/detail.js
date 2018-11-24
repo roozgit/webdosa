@@ -387,9 +387,7 @@ class Detail {
                      return graph.layers.find(lay => lay.id === nlayer).color;
                  });
 
-             dispatch.call('overviewUpdate', this,
-                 {within : graph.layers.find(la => la.id===layerId).within,
-                     between : graph.layers.find(la => la.id===layerId).between});
+             dispatch.call('overviewUpdate', this);
          }
 
          function emitData() {

@@ -31,7 +31,8 @@ dispatch.on('dataLoad', function(graph) {
 
     detail = new Detail("#detail", graph, detailWidth, height,
         {top: 10, right: 20, bottom: 100, left: 100});
-    aggregation = new Aggregation("#infographic", Object.keys(hgraph.nodes[0].features),
+    aggregation = new Aggregation("#infographic", graph, Object.keys(hgraph.nodes[0].features),
+        Object.keys(hgraph.edges[0].features),
         infogWidth, height, {top: 10, right: 10, bottom: 10, left: 10});
 });
 
@@ -50,8 +51,8 @@ dispatch.on('layerDeleted', function(layerId) {
     detail.removeBrush(layerId);
 });
 
-dispatch.on('overviewUpdate', function(overviewObj) {
-    aggregation.updateOverview(overviewObj, hgraph);
+dispatch.on('overviewUpdate', function() {
+    aggregation.updateOverview(hgraph);
 });
 
 dispatch.on('createBoxPlot', function(layerData, rectangle) {
