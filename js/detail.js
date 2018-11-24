@@ -44,8 +44,6 @@ class Detail {
     constructor(el, graph, width, height, margin) {
         this[nodeIds] = new Set();
         this[brushes] = [];
-        this[withinEdges] = new Map();
-        this[betweenEdges] = [];
 
         this[svg] = d3.select(el)
             .append('svg')
@@ -203,6 +201,7 @@ class Detail {
                 this[points]
                     .attr('cx', d => xs(d.position.x))
                     .attr('cy', d => ys(d.position.y));
+
             } else {
                 this[points] = this[points]
                     .selectAll('circle')
@@ -267,50 +266,51 @@ class Detail {
                  extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
 
              dispatch.call('layerMoved', this, {layer: layerId, nodeIds: this[nodeIds]});
-
-             let visibleSet = new Set();
-             for(let lay of graph.layers) {
-                 if(lay.withinVisible) {
-                     for(let branchId of lay.within)
-                         visibleSet.add(branchId);
-                 }
-                 if(lay.betweenVisible) {
-                     [...lay.between].filter(branchId => {
-                         let branch = graph.edgeMap.get(branchId);
-                         let slayer = branch.from.layers[branch.from.layers.length-1];
-                         let tlayer = branch.to.layers[branch.to.layers.length-1];
-                         let gslayer = graph.layers.find(la => la.id===slayer);
-                         let gtlayer = graph.layers.find(la => la.id===tlayer);
-                         return gslayer.betweenVisible && gtlayer.betweenVisible;
-                     }).forEach(branchId => visibleSet.add(branchId));
-                 }
-             }
-             //Should we use id or position. When there is a lot of overlap on nodes,
-             //position seems more apt
-             let visibleMap = new Map();
-             for(let branchId of visibleSet) {
-                 let branch = graph.edgeMap.get(branchId);
-                 let source = branch.from;//.data.id;
-                 let dest = branch.to;//.data.id;
-                 let madeupkey = `(${Math.floor(source.position.x)}, ${Math.floor(source.position.y)}`+
-                     `-(${Math.floor(dest.position.x)}, ${Math.floor(dest.position.y)}`;
-                 if(!visibleMap.has(madeupkey))
-                     visibleMap.set(madeupkey, [branch]);
-                 else visibleMap.set(madeupkey, visibleMap.get(madeupkey).concat([branch]));
-             }
-             let visibleArr = [];
-             for(let branchList of visibleMap) {
-                 let sx = branchList[1][0].from.position.x;
-                 let sy = branchList[1][0].from.position.y;
-                 let tx = branchList[1][0].to.position.x;
-                 let ty = branchList[1][0].to.position.y;
-                 let nume = branchList[1].length;
-                 let paths = arcLinks(xs(sx), ys(sy), xs(tx), ys(ty), nume, 15);
-                 for(let patIdx =0; patIdx < paths.length; patIdx++) {
-                     visibleArr.push({id: branchList[1][patIdx].data.id, path: paths[patIdx],
-                         branch: branchList[1][patIdx]});
-                 }
-             }
+             let visibleArr = calcVisible(graph, xs, ys);
+             // let visibleSet = new Set();
+             // for(let lay of graph.layers) {
+             //     if(lay.withinVisible) {
+             //         for(let branchId of lay.within)
+             //             visibleSet.add(branchId);
+             //     }
+             //     if(lay.betweenVisible) {
+             //         [...lay.between].filter(branchId => {
+             //             let branch = graph.edgeMap.get(branchId);
+             //             let slayer = branch.from.layers[branch.from.layers.length-1];
+             //             let tlayer = branch.to.layers[branch.to.layers.length-1];
+             //             let gslayer = graph.layers.find(la => la.id===slayer);
+             //             let gtlayer = graph.layers.find(la => la.id===tlayer);
+             //             return gslayer.betweenVisible && gtlayer.betweenVisible;
+             //         }).forEach(branchId => visibleSet.add(branchId));
+             //     }
+             // }
+             // //Should we use id or position. When there is a lot of overlap on nodes,
+             // //position seems more apt
+             // let visibleMap = new Map();
+             // for(let branchId of visibleSet) {
+             //     let branch = graph.edgeMap.get(branchId);
+             //     let source = branch.from;//.data.id;
+             //     let dest = branch.to;//.data.id;
+             //     let madeupkey =
+             //         `(${source.position.x.toFixed(4)}, ${source.position.y.toFixed(4)}`+
+             //         `-(${dest.position.x.toFixed(4)}, ${dest.position.y.toFixed(4)}`;
+             //     if(!visibleMap.has(madeupkey))
+             //         visibleMap.set(madeupkey, [branch]);
+             //     else visibleMap.set(madeupkey, visibleMap.get(madeupkey).concat([branch]));
+             // }
+             // let visibleArr = [];
+             // for(let branchList of visibleMap) {
+             //     let sx = branchList[1][0].from.position.x;
+             //     let sy = branchList[1][0].from.position.y;
+             //     let tx = branchList[1][0].to.position.x;
+             //     let ty = branchList[1][0].to.position.y;
+             //     let nume = branchList[1].length;
+             //     let paths = arcLinks(xs(sx), ys(sy), xs(tx), ys(ty), nume, 15);
+             //     for(let patIdx =0; patIdx < paths.length; patIdx++) {
+             //         visibleArr.push({id: branchList[1][patIdx].data.id, path: paths[patIdx],
+             //             branch: branchList[1][patIdx]});
+             //     }
+             // }
 
              this[edgeGroup].selectAll('path')
                  .data(visibleArr, d => d.id)
@@ -472,7 +472,7 @@ class Detail {
 
      }
 
-     removeBrush(brushId) {
+     removeBrush(brushId, removalObject, graph) {
         let brushIds = this[brushes].map(d => d.id);
         let bidx = this[brushes].findIndex(d => d.id === brushId);
         this[brushes].splice(bidx, 1);
@@ -482,7 +482,65 @@ class Detail {
                 .attr('id', "brush-" + brushId);
             this[brushes].find(d => d.id === brushId + 1).id = brushId;
         }
+        this[nodeGroup].selectAll('#scatterPlot circle')
+            .data(removalObject.members, d=> d.data.id)
+            .attr('stroke', d => {
+                let nlayers = graph.nodeMap.get(d.data.id).layers;
+                let nlayer = nlayers[nlayers.length-1];
+                return graph.layers.find(lay => lay.id === nlayer).color;
+            });
+        this[edgeGroup].selectAll('path')
+            .filter(d=> removalObject.within.has(d.id) || removalObject.between.has(d.id))
+            .remove();
      }
+}
+
+function calcVisible(graph, xs, ys) {
+    let visibleSet = new Set();
+    for(let lay of graph.layers) {
+        if(lay.withinVisible) {
+            for(let branchId of lay.within)
+                visibleSet.add(branchId);
+        }
+        if(lay.betweenVisible) {
+            [...lay.between].filter(branchId => {
+                let branch = graph.edgeMap.get(branchId);
+                let slayer = branch.from.layers[branch.from.layers.length-1];
+                let tlayer = branch.to.layers[branch.to.layers.length-1];
+                let gslayer = graph.layers.find(la => la.id===slayer);
+                let gtlayer = graph.layers.find(la => la.id===tlayer);
+                return gslayer.betweenVisible && gtlayer.betweenVisible;
+            }).forEach(branchId => visibleSet.add(branchId));
+        }
+    }
+    //Should we use id or position. When there is a lot of overlap on nodes,
+    //position seems more apt
+    let visibleMap = new Map();
+    for(let branchId of visibleSet) {
+        let branch = graph.edgeMap.get(branchId);
+        let source = branch.from;//.data.id;
+        let dest = branch.to;//.data.id;
+        let madeupkey =
+            `(${source.position.x.toFixed(4)}, ${source.position.y.toFixed(4)}`+
+            `-(${dest.position.x.toFixed(4)}, ${dest.position.y.toFixed(4)}`;
+        if(!visibleMap.has(madeupkey))
+            visibleMap.set(madeupkey, [branch]);
+        else visibleMap.set(madeupkey, visibleMap.get(madeupkey).concat([branch]));
+    }
+    let visibleArr = [];
+    for(let branchList of visibleMap) {
+        let sx = branchList[1][0].from.position.x;
+        let sy = branchList[1][0].from.position.y;
+        let tx = branchList[1][0].to.position.x;
+        let ty = branchList[1][0].to.position.y;
+        let nume = branchList[1].length;
+        let paths = arcLinks(xs(sx), ys(sy), xs(tx), ys(ty), nume, 15);
+        for(let patIdx =0; patIdx < paths.length; patIdx++) {
+            visibleArr.push({id: branchList[1][patIdx].data.id, path: paths[patIdx],
+                branch: branchList[1][patIdx]});
+        }
+    }
+    return visibleArr;
 }
 
 export {Detail};

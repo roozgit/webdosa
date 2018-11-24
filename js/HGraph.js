@@ -76,31 +76,49 @@ class HGraph {
 
     }
 
-    addEdges(nodeId, nodeIds, layer) {
+    addEdges(nodeId, layer) {
         let tos = this.adjList.get(nodeId);
         let froms = this.revAdjList.get(nodeId);
         if(tos) {
             for (let toNode of tos) {
                 let targetId = toNode.to.data.id;
-                if (nodeIds.has(targetId))
+                let targetLayers = this.nodeMap.get(targetId).layers;
+                let sourceLayers = this.nodeMap.get(nodeId).layers;
+                if (sourceLayers[sourceLayers.length-1] === targetLayers[targetLayers.length-1])
                     toNode.via.map(tv => tv.data.id)
-                        .forEach(tnv => layer.within.add(tnv));
+                        .forEach(tnv => {
+                            layer.within.add(tnv);
+                            layer.between.delete(tnv);
+                        });
                 else
                     toNode.via.map(tv => tv.data.id)
-                        .forEach(tnv => layer.between.add(tnv));
+                        .forEach(tnv => {
+                            layer.between.add(tnv);
+                            layer.within.delete(tnv);
+                        });
             }
         }
         if(froms) {
             for(let fromNode of froms) {
                 let sourceId = fromNode.from.data.id;
-                if(nodeIds.has(sourceId))
+                let sourceLayers = this.nodeMap.get(sourceId).layers;
+                let targetLayers = this.nodeMap.get(nodeId).layers;
+                if(sourceLayers[sourceLayers.length-1] === targetLayers[targetLayers.length-1])
                     fromNode.via.map(tv => tv.data.id)
-                        .forEach(fnv => layer.within.add(fnv));
+                        .forEach(fnv => {
+                            layer.within.add(fnv);
+                            layer.between.delete(fnv);
+                        });
                 else
                     fromNode.via.map(tv => tv.data.id)
-                        .forEach(tnv => layer.between.add(tnv));
+                        .forEach(fnv => {
+                            layer.between.add(fnv);
+                            layer.within.delete(fnv);
+                        });
             }
         }
+        // console.log(layer.id, [...layer.within].map(ed => [this.edgeMap.get(ed).from.layers.slice(-1)[0], this.edgeMap.get(ed).to.layers.slice(-1)[0]]),
+        //     [...layer.between].map(ed => [this.edgeMap.get(ed).from.layers.slice(-1)[0], this.edgeMap.get(ed).to.layers.slice(-1)[0]]));
     }
 
     addLayer(nodeIds) {
@@ -121,7 +139,7 @@ class HGraph {
             currentLayer.members.delete(nodeId);
             this.removeEdges(nodeId, currentLayer);
             newLayer.members.add(nodeId);
-            this.addEdges(nodeId, nodeIds, newLayer);
+            this.addEdges(nodeId, newLayer);
         }
     }
 
@@ -138,7 +156,7 @@ class HGraph {
                 this.removeEdges(cnodeId, curLayer);
                 let newLayer = this.layers.find(lay => lay.id ===tlayers[tlayers.length-1]);
                 newLayer.members.add(cnodeId);
-                this.addEdges(cnodeId, nodeIds, newLayer);
+                this.addEdges(cnodeId, newLayer);
             }
         }
 
@@ -148,7 +166,7 @@ class HGraph {
             if(currentLayer < layer) {
                 allNodeLayers.push(layer);
                 curNodes.add(nodeId);
-                this.addEdges(nodeId, nodeIds, curLayer);
+                this.addEdges(nodeId, curLayer);
                 this.layers[currentLayer].members.delete(nodeId);
                 this.removeEdges(nodeId, this.layers[currentLayer]);
             }
@@ -158,10 +176,13 @@ class HGraph {
     deleteLayer(layerId) {
         if(layerId===0) {
             console.log("Can't delete base layer");
-            return false;
+            return {};
         }
         let idx = this.layers.findIndex(la => la.id=== layerId);
         let layer = this.layers[idx];
+        let withins = layer.within;
+        let betweens = layer.between;
+        let mems = layer.members;
         for(let nodeId of layer.members) {
             let node = this.nodeMap.get(nodeId);
             let nodeLayers = node.layers;
@@ -170,10 +191,12 @@ class HGraph {
             let newNodeLayerId = nodeLayers[nodeLayers.length-1];
             let newNodeLayer = this.layers.find(la => la.id === newNodeLayerId);
             newNodeLayer.members.add(nodeId);
-            this.addEdges(nodeId, newNodeLayer.members, newNodeLayer);
+            this.addEdges(nodeId, newNodeLayer);
         }
         this.layers.splice(idx, 1);
-        return true;
+        return {members: [...mems].map(dx => this.nodeMap.get(dx)),
+            within: withins,
+            between: betweens};
     }
 
     selectLayer(layerId) {

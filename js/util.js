@@ -121,11 +121,5 @@ function intersect(points, rect) {
     else return undefined;
 }
 
-function scent(arr, feature) {
-    let indices = arr.map(d => d.features.index);
-    let dest = arr.map(d => d.features[feature]);
-
-}
-
 export {arcLinks, getJsonFromUrl, ellipticalArc, samples, intersect};
 

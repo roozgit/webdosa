@@ -4,6 +4,7 @@ import {max, min} from "d3-array";
 import {area} from "d3-shape";
 
 let svg = Symbol();
+let fscaler = Symbol();
 
 class Widget {
     constructor(el, graph, width, height, margin) {
@@ -61,6 +62,10 @@ class Widget {
                     .attr('fill', "blue");
             }
         }
+    }
+
+    calcScale(arr, feat) {
+       // let
     }
 
 }
