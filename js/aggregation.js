@@ -19,6 +19,7 @@ let aggEdges = Symbol();
 let arrowFeature = Symbol();
 let arrowFunc = Symbol();
 let edgeScaler = Symbol();
+let plotTypes = Symbol();
 
 const quadSep = 60;
 const boxWidth = 150;
@@ -80,7 +81,8 @@ class Aggregation {
             .append('select')
             .style("position", "relative")
             .attr("id", "agxvar")
-            .style('visibility', "hidden");
+            .style('visibility', "hidden")
+            .on('change', () => this.boxPlots(this[amargin]));
 
         this[aggControlsX].selectAll("option")
             .data(features).enter()
@@ -92,13 +94,16 @@ class Aggregation {
             .append('select')
             .style("position", "relative")
             .attr("id", "agyvar")
-            .style('visibility', "hidden");
+            .style('visibility', "hidden")
+            .on('change', () => this.boxPlots(this[amargin]));
+
         this[aggControlsY].selectAll("option")
             .data(features).enter()
             .append("option")
             .attr("value", d => d)
             .text(d => d);
 
+        //edge feature selection
         this[aggEdges] = d3.select('#aggControls')
             .append('select')
             .style("position", "relative")
@@ -120,6 +125,19 @@ class Aggregation {
             .append("option")
             .attr("value", d => d)
             .text(d => d);
+
+        //plot types
+        this[plotTypes] = d3.select('#aggControls')
+            .append('select')
+            .style("position", "relative")
+            .attr("id", "agPlotType")
+            .style('visibility', "hidden")
+            .on('change', () => this.boxPlots(this[amargin]));
+        this[plotTypes].selectAll('option')
+            .data(["scatter", "line", "chart", "area", "bar", "pie"]).enter()
+            .append('option')
+            .attr('value', d => d)
+            .text(d =>d);
     }
 
     calcAggregates(graph, ffunc) {
@@ -238,15 +256,7 @@ class Aggregation {
             .attr('stroke-width', "5px")
             .call(boxDragger);
 
-        //draw diagrams inside boxes
-        this[boxNodes].selectAll('rect').each(function(d) {
-            if(d3.select('#boxplot-'+ d.id).empty())
-                dispatch.call('createBoxPlot', mmargin, d, d3.select(this).node().getBBox());
-            else
-                dispatch.call('updateBoxPlot', d.id, d);
-        });
-
-        //End of draw diagrams inside boxes
+        this.boxPlots(mmargin);
 
         if(allArr.length > 0) {
             laycopy.forEach(la => {
@@ -347,9 +357,24 @@ class Aggregation {
         this[aggControlsX].style('visibility', "visible");
         this[aggControlsY].style('visibility', "visible");
         this[aggEdges].style('visibility', "visible");
+        this[plotTypes].style('visibility', "visible");
         this[aggControlsX].selectAll('option').filter(d => d==="index").attr('selected', "selected");
         this[aggControlsY].selectAll('option').filter(d => d==="index").attr('selected', "selected");
         this[aggEdges].selectAll('option').filter(d => d==="count").attr('selected', "selected");
+        this[plotTypes].selectAll('option').filter(d => d==="scatter").attr('selected', "selected");
+    }
+
+    boxPlots(mmargin) {
+        this[boxNodes].selectAll('rect').each(function(d) {
+            if(d3.select('#boxplot-'+ d.id).empty())
+                dispatch.call('createBoxPlot', mmargin, d, d3.select(this).node().getBBox());
+            else
+                dispatch.call('updateBoxPlot', {id: d.id,
+                    featureX: d3.select('#agxvar').node().value,
+                    featureY: d3.select('#agyvar').node().value,
+                    plotType: d3.select('#agPlotType').node().value
+                }, d);
+        });
     }
 
 }

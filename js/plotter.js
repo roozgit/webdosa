@@ -61,10 +61,8 @@ class Plotter {
             case "bar":
             case "line":
             case "area":
-                let dps = this[svg].selectAll('circle').data(pos);
-                dps.exit().remove();
-
-                dps.enter()
+                this[svg].selectAll('circle').remove();
+                this[svg].selectAll('circle').data(pos).enter()
                     .append('circle')
                     .attr('cx', d => d[0])
                     .attr('cy', d => d[1])
