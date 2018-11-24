@@ -26,6 +26,13 @@ class LayerMgr {
             .text(d => d);
 
         trow.append('td')
+            .attr('class','fa fa-eye')
+            .on("click",function(){
+                console.log("view")
+            });
+
+
+        trow.append('td')
             .text(layer.label)
             .attr("contentEditable",true)
             .on("keyup", function() {
@@ -66,24 +73,31 @@ class LayerMgr {
                 }
             })
 
+        //I don't know why background doesn't get deleted
         trow.append('td')
             .attr('class','fa fa-trash')
             .on("click",function(){
-                console.log("del")
-                d3.select('tr').remove();
-            })
+                console.log("deleted-"+layer.label);
+                d3.select("tr#layer-"+layer.id).remove();
+            });
 
-
+        //https://github.com/d3/d3-selection#selection_insert
+        //http://objjob.phrogz.net/d3/method/1112
         trow.append('td')
             .attr('class','fa fa-arrow-up')
-            .on("click",function(){
-                console.log("clicked me? up")
+            .on("click",function(d){
+                console.log("up")
+                console.log(layer.id-2,layer.id)
+                d3.select(this[tbl])
+                    .insert('tr','#layer-'+layer.id-2)
+                    .attr('id',"layer-99");
+
             });
 
         trow.append('td')
             .attr('class','fa fa-arrow-down')
             .on("click",function(){
-                console.log("clicked me? down")
+                console.log("down")
             });
 
         trow.append('td')

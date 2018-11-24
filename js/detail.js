@@ -66,6 +66,21 @@ class Detail {
             .attr("value", d => d)
             .text(d => d);
 
+        // export SVG
+        var svgsaver = new SvgSaver();
+
+        let exportButton = d3.select("#detailControls")
+            .append("button")
+            .attr('type','button')
+            .attr('id', 'export')
+            .append('text')
+            .text("Export")
+            .on("click", function(){
+                console.log(document.getElementById('svgDetail'));
+                svgsaver.asSvg(document.getElementById('svgDetail'),"test.svg");
+        });
+        // export SVG
+
         detailControlsX.selectAll('option').filter(d => d==="lng").attr('selected', "selected");
         detailControlsY.selectAll('option').filter(d => d==="lat").attr('selected', "selected");
 

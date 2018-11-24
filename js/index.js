@@ -7,7 +7,7 @@ import {LayerMgr} from "./layers";
 import {getJsonFromUrl} from "./util";
 //import {HGraph as graph} from "./HGraph";
 
-let scWidgetWidth = 180;
+let scWidgetWidth = 300;
 let detailWidth = 700;
 let infogWidth = 400;
 let height = 750;
@@ -21,7 +21,7 @@ dispatch.on('dataLoad', function(graph) {
     console.log(hgraph);
     widget = new Widget("#widgets", graph, scWidgetWidth, 2 *height /3,
         {top: 10, right: 20, bottom: 100, left: 10});
-    layerMgr = new LayerMgr("#layerMgr", graph, scWidgetWidth, height / 3,
+    layerMgr = new LayerMgr("#layerMgr", graph, 300, height / 3,
         {top: 10, right: 20, bottom: 100, left: 10});
     layerMgr.addLayer(graph.layers);
 
