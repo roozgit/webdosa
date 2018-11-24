@@ -25,7 +25,8 @@ class LayerMgr {
                     .selectAll('tr')
                     .selectAll('td:nth-child(1)')
                     .style('background-color', "black");
-                d3.select(this).style('background-color', "red");
+                if(layer.selected)
+                    d3.select(this).style('background-color', "red");
             });
 
         //layer label -2
