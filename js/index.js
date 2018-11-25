@@ -24,13 +24,13 @@ dispatch.on('dataLoad', function(graph) {
     hgraph = graph;
     console.log(hgraph);
     widget = new Widget("#widgets", graph, scWidgetWidth, 2 *height /3,
-        {top: 10, right: 20, bottom: 100, left: 10});
+        {top: 5, right: 5, bottom: 5, left: 5});
     layerMgr = new LayerMgr("#layerMgr", scWidgetWidth, height / 3,
         {top: 10, right: 20, bottom: 100, left: 10});
     layerMgr.addLayer(hgraph, 0);
 
     detail = new Detail("#detail", graph, detailWidth, height,
-        {top: 10, right: 20, bottom: 100, left: 100});
+        {top: 10, right: 20, bottom: 25, left: 50});
     aggregation = new Aggregation("#infographic", graph, Object.keys(hgraph.nodes[0].features),
         Object.keys(hgraph.edges[0].features),
         infogWidth, height, {top: 10, right: 10, bottom: 10, left: 10});

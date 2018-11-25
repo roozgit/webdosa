@@ -22,3 +22,11 @@ table, th, td {
 td {
     color: grey;
 }
+
+div#widgets {
+    height: 450px;
+    width: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border:  solid lightgrey;
+}
