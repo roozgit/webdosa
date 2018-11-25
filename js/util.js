@@ -123,8 +123,10 @@ function intersect(points, rect) {
 }
 
 function gradientGenerator(el, layer1, layer2, color1, color2, dir) {
+    let c = '';
+    if(el.startsWith("#a")) c= 'a';
     let grd = select(el).append('linearGradient')
-        .attr('id', `grad-${layer1}-${layer2}-${dir}`)
+        .attr('id', c + `grad-${layer1}-${layer2}-${dir}`)
         .attr("gradientUnits", "objectBoundingBox")
         .attr('x1', "0%")
         .attr('y1', "0%")

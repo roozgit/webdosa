@@ -293,21 +293,21 @@ class Aggregation {
                         return d.source.color;
                     else {
                         if(d.source.x <= d.target.x) {
-                            if(d3.select('#detailDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
+                            if(d3.select('#aggDefs').select(`#agrad-${d.source.id}-${d.target.id}-lr`)
                                 .empty()) {
-                                gradientGenerator('#detailDefs', d.source.id, d.target.id,
+                                gradientGenerator('#aggDefs', d.source.id, d.target.id,
                                     graph.layers.find(la => la.id===d.source.id).color,
                                     graph.layers.find(la => la.id===d.target.id).color, "lr");
                             }
-                            return `url(#grad-${d.source.id}-${d.target.id}-lr)`;
+                            return `url(#agrad-${d.source.id}-${d.target.id}-lr)`;
                         } else {
-                            if(d3.select('#detailDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
+                            if(d3.select('#aggDefs').select(`#agrad-${d.source.id}-${d.target.id}-rl`)
                                 .empty()) {
-                                gradientGenerator('#detailDefs', d.source.id, d.target.id,
+                                gradientGenerator('#aggDefs', d.source.id, d.target.id,
                                     graph.layers.find(la => la.id===d.target.id).color,
                                     graph.layers.find(la => la.id===d.source.id).color, "rl");
                             }
-                            return `url(#grad-${d.source.id}-${d.target.id}-rl)`;
+                            return `url(#agrad-${d.source.id}-${d.target.id}-rl)`;
                         }
                     }
                 })
@@ -352,21 +352,21 @@ class Aggregation {
                             return d.source.color;
                         else {
                             if(d.source.x <= d.target.x) {
-                                if(d3.select('#detailDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
+                                if(d3.select('#aggDefs').select(`#agrad-${d.source.id}-${d.target.id}-lr`)
                                     .empty()) {
-                                    gradientGenerator('#detailDefs', d.source.id, d.target.id,
+                                    gradientGenerator('#aggDefs', d.source.id, d.target.id,
                                         graph.layers.find(la => la.id===d.source.id).color,
                                         graph.layers.find(la => la.id===d.target.id).color, "lr");
                                 }
-                                return `url(#grad-${d.source.id}-${d.target.id}-lr)`;
+                                return `url(#agrad-${d.source.id}-${d.target.id}-lr)`;
                             } else {
-                                if(d3.select('#detailDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
+                                if(d3.select('#aggDefs').select(`#agrad-${d.source.id}-${d.target.id}-rl`)
                                     .empty()) {
-                                    gradientGenerator('#detailDefs', d.source.id, d.target.id,
+                                    gradientGenerator('#aggDefs', d.source.id, d.target.id,
                                         graph.layers.find(la => la.id===d.target.id).color,
                                         graph.layers.find(la => la.id===d.source.id).color, "rl");
                                 }
-                                return `url(#grad-${d.source.id}-${d.target.id}-rl)`;
+                                return `url(#agrad-${d.source.id}-${d.target.id}-rl)`;
                             }
                         }
                     })
