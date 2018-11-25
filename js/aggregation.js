@@ -2,14 +2,12 @@ import d3 from 'd3-selection';
 import {arcLinks, ellipticalArc, gradientGenerator, insideRect, intersect, samples} from "./util";
 import {drag} from "d3-drag";
 import {dispatch} from './index';
-import {scaleLinear, scaleLog, scaleSequential} from "d3-scale";
-import {interpolateBasis, interpolateNumber} from "d3-interpolate";
+import {scaleLog} from "d3-scale";
 import {sum as d3sum, min as d3min} from 'd3-array';
 
 let svg = Symbol();
 let boxLinks = Symbol();
 let boxNodes = Symbol();
-let boxLables = Symbol();
 let swidth = Symbol();
 let sheight = Symbol();
 let amargin = Symbol();
@@ -295,17 +293,17 @@ class Aggregation {
                         return d.source.color;
                     else {
                         if(d.source.x <= d.target.x) {
-                            if(d3.select('#aggDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
+                            if(d3.select('#detailDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
                                 .empty()) {
-                                gradientGenerator('#aggDefs', d.source.id, d.target.id,
+                                gradientGenerator('#detailDefs', d.source.id, d.target.id,
                                     graph.layers.find(la => la.id===d.source.id).color,
                                     graph.layers.find(la => la.id===d.target.id).color, "lr");
                             }
                             return `url(#grad-${d.source.id}-${d.target.id}-lr)`;
                         } else {
-                            if(d3.select('#aggDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
+                            if(d3.select('#detailDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
                                 .empty()) {
-                                gradientGenerator('#aggDefs', d.source.id, d.target.id,
+                                gradientGenerator('#detailDefs', d.source.id, d.target.id,
                                     graph.layers.find(la => la.id===d.target.id).color,
                                     graph.layers.find(la => la.id===d.source.id).color, "rl");
                             }
@@ -354,17 +352,17 @@ class Aggregation {
                             return d.source.color;
                         else {
                             if(d.source.x <= d.target.x) {
-                                if(d3.select('#aggDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
+                                if(d3.select('#detailDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
                                     .empty()) {
-                                    gradientGenerator('#aggDefs', d.source.id, d.target.id,
+                                    gradientGenerator('#detailDefs', d.source.id, d.target.id,
                                         graph.layers.find(la => la.id===d.source.id).color,
                                         graph.layers.find(la => la.id===d.target.id).color, "lr");
                                 }
                                 return `url(#grad-${d.source.id}-${d.target.id}-lr)`;
                             } else {
-                                if(d3.select('#aggDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
+                                if(d3.select('#detailDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
                                     .empty()) {
-                                    gradientGenerator('#aggDefs', d.source.id, d.target.id,
+                                    gradientGenerator('#detailDefs', d.source.id, d.target.id,
                                         graph.layers.find(la => la.id===d.target.id).color,
                                         graph.layers.find(la => la.id===d.source.id).color, "rl");
                                 }
