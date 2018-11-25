@@ -212,12 +212,12 @@ class Aggregation {
         else {
             let tarr = graph.edges.map(dv => Math.abs(dv.features[this[arrowFeature]]));
             let lowerBound = d3min(tarr);
-            if(lowerBound===0) lowerBound=1;
+            if(lowerBound===0) lowerBound=.1;
             extentSelector = [lowerBound, d3sum(tarr)];
         }
 
         this[edgeScaler] = scaleLog().domain(extentSelector)
-            .range([0,80]).clamp(true);
+            .range([1,80]).clamp(true);
 
         let mmargin = this[amargin];
         let boxDragger = drag()
