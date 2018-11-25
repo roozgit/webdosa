@@ -21,10 +21,10 @@ let withinEdges = Symbol();
 let betweenEdges = Symbol();
 
 function gradientGenerator(layer1, layer2, color1, color2, dir) {
-    let grd = d3.select('#detailDefs').append('linearGradient')
+    let grd = d3.select('#svgDetail #detailDefs').append('linearGradient')
         .attr('id', `grad-${layer1}-${layer2}-${dir}`)
         .attr("gradientUnits", "objectBoundingBox")
-        .attr('x1', "50%")
+        .attr('x1', "0%")
         .attr('y1', "0%")
         .attr('x2', "100%")
         .attr('y2' , "0%");
@@ -99,7 +99,6 @@ class Detail {
 
         detailControlsY.on('change', () => {
             let feat = detailControlsY.node().value;
-            //graph.nodes.forEach(n => n.position.y = feat==="lat" ? -n.features[feat] : n.features[feat]);
             graph.nodes.forEach(n => n.position.y = n.features[feat]);
             redraw.call(this, true);
         });
@@ -127,18 +126,6 @@ class Detail {
                 .attr("transform", "translate(0," + height + ")")
                 .call(axisBottom(xs));
 
-            //if (updateMode) this[nodeGroup].select('text#leftAxisText').remove();
-            // this[nodeGroup].append('text')
-            //     .attr('id', "leftAxisText")
-            //     .attr('transform', "rotate(-90)")
-            //     .attr('y', 0 - margin.left)
-            //     .attr('x', 0 - (height / 2))
-            //     .attr('dy', "1em")
-            //     .attr('pointer-events', "none")
-            //     .style('text-anchor', "middle")
-            //     .style('fill', "lightgray")
-            //     .text("Y");
-
             d3.selectAll('.tick')
                 .attr('pointer-events', "none");
 
@@ -148,49 +135,14 @@ class Detail {
                     .y(d => ys(d.position.y))
                     .addAll(graph.nodes);
 
-                // this[nodeGroup].selectAll('.node')
-                //     .data(nodes(this[quadTree]))
-                //     .enter().append('rect')
-                //     .attr('class', "node")
-                //     .attr('x', function(d) { return d.x0; })
-                //     .attr('y', function(d) { return d.y0; })
-                //     .attr('width', function(d) { return d.x1 - d.x0; })
-                //     .attr('height', function(d) { return d.y1 - d.y0; })
-                //     .style('opacity', .1);
             } else {
                 this[quadTree] = quadtree()
                     .x(d => xs(d.position.x))
                     .y(d => ys(d.position.y))
                     .addAll(graph.nodes);
 
-                // this[nodeGroup].selectAll('.node').remove();
-                // this[nodeGroup].selectAll('.node')
-                //     .data(nodes(this[quadTree]))
-                //     .enter().append('rect')
-                //     .attr('class', "node")
-                //     .attr('x', function(d) { return d.x0; })
-                //     .attr('y', function(d) { return d.y0; })
-                //     .attr('width', function(d) { return d.x1 - d.x0; })
-                //     .attr('height', function(d) { return d.y1 - d.y0; })
-                //     .style('opacity', .1);
             }
-            // function nodes(qt) {
-            //     var nodes = [];
-            //     qt.visit(function(node, x0, y0, x1, y1) {
-            //         node.x0 = x0, node.y0 = y0;
-            //         node.x1 = x1, node.y1 = y1;
-            //         if(y1 > height) node.y1 = height;
-            //         if(y0 > height) node.y0 = height;
-            //         if(x1 > width) node.x1 = width;
-            //         if(x0 > width) node.x0 = width;
-            //         nodes.push(node);
-            //     });
-            //     return nodes;
-            // }
-            // if (!updateMode) {
-            //     this[points] =
-            //         this[nodeGroup].append('g').attr('id', "scatterPlot");
-            // }
+
             if(updateMode) this[edgeGroup].remove();
             this[edgeGroup] = this[nodeGroup].append('g').attr('id',"edgeContainer");
 
@@ -296,10 +248,6 @@ class Detail {
                  return;
              }
              let bru = d3.select(`#brush-${layerId}`);
-             // let brushSize = bru.select('rect.selection').node().getBBox();
-             // if(brushSize.width===0 || brushSize.length===0) {
-             //    console.log("zero sized brush...take care later!!!");
-             // }
              bru.selectAll('rect.handle')
                  .attr('fill', graph.layers.find(la => la.id===layerId).color);
 
@@ -308,11 +256,6 @@ class Detail {
 
              // Always draw brushes
              this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
-
-             // d3.selectAll('#scatterPlot circle')
-             //     .attr('stroke',d => {
-             //         return graph.layers[Array.from(d.layers).pop()].color
-             //     });
          }
 
          // Find the nodes within the specified rectangle.
@@ -503,4 +446,4 @@ function calcVisible(graph, xs, ys) {
     return visibleArr;
 }
 
-export {Detail};
+export {Detail, gradientGenerator};

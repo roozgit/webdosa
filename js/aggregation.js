@@ -5,6 +5,7 @@ import {dispatch} from './index';
 import {scaleLinear, scaleLog, scaleSequential} from "d3-scale";
 import {interpolateBasis, interpolateNumber} from "d3-interpolate";
 import {sum as d3sum, min as d3min} from 'd3-array';
+import {gradientGenerator} from "./detail";
 
 let svg = Symbol();
 let boxLinks = Symbol();
@@ -43,7 +44,7 @@ function markerGenerator(color, mid) {
         .attr('refY', "5")
         .attr('markerUnits', "strokeWidth")
         .attr('orient', "auto")
-        .attr('overflow', "visible")
+        .attr('overflow', "hidden")
         .attr('fill', color);
     tmarker.append('path')
         .attr('d', "M 0 0 L 5 5 L 0 10 z");
@@ -291,12 +292,32 @@ class Aggregation {
                 .attr("stroke", d => {
                     if(d.source.id === d.target.id)
                         return d.source.color;
+                    else {
+                        if(d.source.x <= d.target.x) {
+                            if(d3.select('#svgDetail #detailDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
+                                .empty()) {
+                                gradientGenerator(d.source.id, d.target.id,
+                                    graph.layers.find(la => la.id===d.source.id).color,
+                                    graph.layers.find(la => la.id===d.target.id).color, "lr");
+                            }
+                            return `url(#grad-${d.source.id}-${d.target.id}-lr)`;
+                        } else {
+                            if(d3.select('#svgDetail #detailDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
+                                .empty()) {
+                                gradientGenerator(d.source.id, d.target.id,
+                                    graph.layers.find(la => la.id===d.target.id).color,
+                                    graph.layers.find(la => la.id===d.source.id).color, "rl");
+                            }
+                            return `url(#grad-${d.source.id}-${d.target.id}-rl)`;
+                        }
+                    }
                 })
                 .attr('marker-end', d => {
-                    if(d3.select('#arrowHead-' + d.source.id).empty()) {
-                        markerGenerator(d.source.color, d.source.id);
-                    }
-                    return `url(#arrowHead-${d.source.id})`
+                    if(d.source.id === d.target.id)
+                        if(d3.select('#arrowHead-' + d.target.id).empty()) {
+                            markerGenerator(d.target.color, d.target.id);
+                        }
+                    return `url(#arrowHead-${d.target.id})`
                 });
         } else this[boxLinks].selectAll('path').remove();
 
@@ -327,12 +348,35 @@ class Aggregation {
                     .attr("stroke-width", d => this[edgeScaler](d.value))
                     .attr('d', newpat)
                     .attr("fill", "none")
-                    .attr("stroke", d => d.source.color)
-                    .attr('marker-end', d => {
-                        if(d3.select('#arrowHead-' + d.source.id).empty()) {
-                            markerGenerator(d.source.color, d.source.id);
+                    .attr("stroke", d => {
+                        if(d.source.id === d.target.id)
+                            return d.source.color;
+                        else {
+                            if(d.source.x <= d.target.x) {
+                                if(d3.select('#svgDetail #detailDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
+                                    .empty()) {
+                                    gradientGenerator(d.source.id, d.target.id,
+                                        graph.layers.find(la => la.id===d.source.id).color,
+                                        graph.layers.find(la => la.id===d.target.id).color, "lr");
+                                }
+                                return `url(#grad-${d.source.id}-${d.target.id}-lr)`;
+                            } else {
+                                if(d3.select('#svgDetail #detailDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
+                                    .empty()) {
+                                    gradientGenerator(d.source.id, d.target.id,
+                                        graph.layers.find(la => la.id===d.target.id).color,
+                                        graph.layers.find(la => la.id===d.source.id).color, "rl");
+                                }
+                                return `url(#grad-${d.source.id}-${d.target.id}-rl)`;
+                            }
                         }
-                        return `url(#arrowHead-${d.source.id})`
+                    })
+                    .attr('marker-end', d => {
+                        if(d.source.id !== d.target.id)
+                            if(d3.select('#arrowHead-' + d.target.id).empty()) {
+                                markerGenerator(d.target.color, d.target.id);
+                            }
+                            return `url(#arrowHead-${d.target.id})`;
                     });
             }
             d3.selectAll('.aggValues').remove();
