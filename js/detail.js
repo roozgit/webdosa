@@ -5,7 +5,7 @@ import {quadtree} from 'd3-quadtree';
 import d3 from 'd3-selection';
 import {brush as d3brush} from 'd3-brush';
 import {dispatch} from './index';
-import {arcLinks} from './util';
+import {arcLinks, gradientGenerator} from './util';
 import {zoom} from "d3-zoom";
 
 let svg = Symbol();
@@ -19,26 +19,6 @@ let brushes = Symbol();
 let defs = Symbol();
 let withinEdges = Symbol();
 let betweenEdges = Symbol();
-
-function gradientGenerator(layer1, layer2, color1, color2, dir) {
-    let grd = d3.select('#svgDetail #detailDefs').append('linearGradient')
-        .attr('id', `grad-${layer1}-${layer2}-${dir}`)
-        .attr("gradientUnits", "objectBoundingBox")
-        .attr('x1', "0%")
-        .attr('y1', "0%")
-        .attr('x2', "100%")
-        .attr('y2' , "0%");
-    grd.append("stop")
-        .attr('class', 'start')
-        .attr("offset", "0%")
-        .attr("stop-color", color1)
-        .attr("stop-opacity", 1);
-    grd.append("stop")
-        .attr('class', 'end')
-        .attr("offset", "100%")
-        .attr("stop-color", color2)
-        .attr("stop-opacity", 1);
-}
 
 class Detail {
     constructor(el, graph, width, height, margin) {
@@ -294,7 +274,7 @@ class Detail {
                      if(d.branch.from.position.x <=  d.branch.to.position.x) {
                          if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-lr`)
                              .empty()) {
-                             gradientGenerator(slayer, tlayer,
+                             gradientGenerator('#detailDefs', slayer, tlayer,
                                  graph.layers.find(la => la.id===slayer).color,
                                  graph.layers.find(la => la.id===tlayer).color, "lr");
                          }
@@ -302,7 +282,7 @@ class Detail {
                      } else {
                          if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-rl`)
                              .empty()) {
-                             gradientGenerator(slayer, tlayer,
+                             gradientGenerator('#detailDefs', slayer, tlayer,
                                  graph.layers.find(la => la.id===tlayer).color,
                                  graph.layers.find(la => la.id===slayer).color, "rl");
                          }
@@ -327,7 +307,7 @@ class Detail {
                          if(d.branch.from.position.x <=  d.branch.to.position.x) {
                              if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-lr`)
                                  .empty()) {
-                                 gradientGenerator(slayer, tlayer,
+                                 gradientGenerator('#detailDefs', slayer, tlayer,
                                      graph.layers.find(la => la.id===slayer).color,
                                      graph.layers.find(la => la.id===tlayer).color, "lr");
                              }
@@ -335,7 +315,7 @@ class Detail {
                          } else {
                              if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-rl`)
                                  .empty()) {
-                                 gradientGenerator(slayer, tlayer,
+                                 gradientGenerator('#detailDefs', slayer, tlayer,
                                      graph.layers.find(la => la.id===tlayer).color,
                                      graph.layers.find(la => la.id===slayer).color, "rl");
                              }
@@ -446,4 +426,4 @@ function calcVisible(graph, xs, ys) {
     return visibleArr;
 }
 
-export {Detail, gradientGenerator};
+export {Detail};

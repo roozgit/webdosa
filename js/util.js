@@ -1,5 +1,6 @@
 //https://stackoverflow.com/questions/31804392/create-svg-arcs-between-two-points
 import {range} from "d3-array";
+import {select} from "d3-selection";
 
 function arcLinks(x1, y1, x2, y2, n, k) {
     if(n === 0) return [];
@@ -121,5 +122,25 @@ function intersect(points, rect) {
     else return undefined;
 }
 
-export {arcLinks, getJsonFromUrl, ellipticalArc, samples, intersect};
+function gradientGenerator(el, layer1, layer2, color1, color2, dir) {
+    let grd = select(el).append('linearGradient')
+        .attr('id', `grad-${layer1}-${layer2}-${dir}`)
+        .attr("gradientUnits", "objectBoundingBox")
+        .attr('x1', "0%")
+        .attr('y1', "0%")
+        .attr('x2', "100%")
+        .attr('y2' , "0%");
+    grd.append("stop")
+        .attr('class', 'start')
+        .attr("offset", "0%")
+        .attr("stop-color", color1)
+        .attr("stop-opacity", 1);
+    grd.append("stop")
+        .attr('class', 'end')
+        .attr("offset", "100%")
+        .attr("stop-color", color2)
+        .attr("stop-opacity", 1);
+}
+
+export {arcLinks, getJsonFromUrl, ellipticalArc, samples, intersect, gradientGenerator};
 

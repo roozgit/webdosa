@@ -1,11 +1,10 @@
 import d3 from 'd3-selection';
-import {arcLinks, ellipticalArc, insideRect, intersect, samples} from "./util";
+import {arcLinks, ellipticalArc, gradientGenerator, insideRect, intersect, samples} from "./util";
 import {drag} from "d3-drag";
 import {dispatch} from './index';
 import {scaleLinear, scaleLog, scaleSequential} from "d3-scale";
 import {interpolateBasis, interpolateNumber} from "d3-interpolate";
 import {sum as d3sum, min as d3min} from 'd3-array';
-import {gradientGenerator} from "./detail";
 
 let svg = Symbol();
 let boxLinks = Symbol();
@@ -114,8 +113,10 @@ class Aggregation {
                 this[arrowFeature] = this[aggEdges].node().value;
                 if(this[arrowFeature] === "count") {
                     this[arrowFunc] = x => [...x].length;
-                }
-                else {
+                } else if(this[arrowFeature]==="dtype") {
+                    this[arrowFunc] = x => new Set([...x]
+                        .map(dv => graph.edgeMap.get(dv).features[this[arrowFeature]])).size;
+                } else {
                     this[arrowFunc] = x => d3sum([...x]
                         .map(dv => graph.edgeMap.get(dv).features[this[arrowFeature]]));
                 }
@@ -209,14 +210,14 @@ class Aggregation {
             extentSelector = [1,graph.edges.length];
         }
         else {
-            extentSelector = [d3min(graph.edges.map(dv => dv.features[this[arrowFeature]])),
-                d3sum(graph.edges.map(dv => dv.features[this[arrowFeature]]))];
+            let tarr = graph.edges.map(dv => Math.abs(dv.features[this[arrowFeature]]));
+            let lowerBound = d3min(tarr);
+            if(lowerBound===0) lowerBound=1;
+            extentSelector = [lowerBound, d3sum(tarr)];
         }
 
-        //let rangeSelector = this[arrowFeature]==="count" ? [1,75] : [0,100];
-
         this[edgeScaler] = scaleLog().domain(extentSelector)
-            .range([1,80]).clamp(true);
+            .range([0,80]).clamp(true);
 
         let mmargin = this[amargin];
         let boxDragger = drag()
@@ -241,7 +242,7 @@ class Aggregation {
                         else
                             return arcLinks(sx,sy,tx,ty,1,quadSep);
                     })
-                    .attr('stroke-width', d => this[edgeScaler](d.value));
+                    .attr('stroke-width', d => this[edgeScaler](Math.abs(d.value)));
                 pathUpdater();
             }.bind(this));
 
@@ -272,7 +273,7 @@ class Aggregation {
                 .data(allArr, d => d.source.id + "-" + d.target.id);
 
             boln.exit().remove();
-            boln.attr('stroke-width', d => this[edgeScaler](d.value));
+            boln.attr('stroke-width', d => this[edgeScaler](Math.abs(d.value)));
             boln.enter()
                 .append('path')
                 .attr('id', d => "bigPath-" + d.source.id + "-" + d.target.id )
@@ -287,24 +288,24 @@ class Aggregation {
                     else
                         return arcLinks(sx,sy,tx,ty,1,quadSep);
                 })
-                .attr("stroke-width", d => this[edgeScaler](d.value))
+                .attr("stroke-width", d => this[edgeScaler](Math.abs(d.value)))
                 .attr("fill", "none")
                 .attr("stroke", d => {
                     if(d.source.id === d.target.id)
                         return d.source.color;
                     else {
                         if(d.source.x <= d.target.x) {
-                            if(d3.select('#svgDetail #detailDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
+                            if(d3.select('#aggDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
                                 .empty()) {
-                                gradientGenerator(d.source.id, d.target.id,
+                                gradientGenerator('#aggDefs', d.source.id, d.target.id,
                                     graph.layers.find(la => la.id===d.source.id).color,
                                     graph.layers.find(la => la.id===d.target.id).color, "lr");
                             }
                             return `url(#grad-${d.source.id}-${d.target.id}-lr)`;
                         } else {
-                            if(d3.select('#svgDetail #detailDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
+                            if(d3.select('#aggDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
                                 .empty()) {
-                                gradientGenerator(d.source.id, d.target.id,
+                                gradientGenerator('#aggDefs', d.source.id, d.target.id,
                                     graph.layers.find(la => la.id===d.target.id).color,
                                     graph.layers.find(la => la.id===d.source.id).color, "rl");
                             }
@@ -345,7 +346,7 @@ class Aggregation {
                 this[boxLinks].append('path')
                     .datum(pat[1].pathData, d => d.source.id + "-" + d.target.id)
                     .attr('id', pat[0])
-                    .attr("stroke-width", d => this[edgeScaler](d.value))
+                    .attr("stroke-width", d => this[edgeScaler](Math.abs(d.value)))
                     .attr('d', newpat)
                     .attr("fill", "none")
                     .attr("stroke", d => {
@@ -353,17 +354,17 @@ class Aggregation {
                             return d.source.color;
                         else {
                             if(d.source.x <= d.target.x) {
-                                if(d3.select('#svgDetail #detailDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
+                                if(d3.select('#aggDefs').select(`#grad-${d.source.id}-${d.target.id}-lr`)
                                     .empty()) {
-                                    gradientGenerator(d.source.id, d.target.id,
+                                    gradientGenerator('#aggDefs', d.source.id, d.target.id,
                                         graph.layers.find(la => la.id===d.source.id).color,
                                         graph.layers.find(la => la.id===d.target.id).color, "lr");
                                 }
                                 return `url(#grad-${d.source.id}-${d.target.id}-lr)`;
                             } else {
-                                if(d3.select('#svgDetail #detailDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
+                                if(d3.select('#aggDefs').select(`#grad-${d.source.id}-${d.target.id}-rl`)
                                     .empty()) {
-                                    gradientGenerator(d.source.id, d.target.id,
+                                    gradientGenerator('#aggDefs', d.source.id, d.target.id,
                                         graph.layers.find(la => la.id===d.target.id).color,
                                         graph.layers.find(la => la.id===d.source.id).color, "rl");
                                 }
@@ -383,7 +384,7 @@ class Aggregation {
             this[boxLinks].selectAll('path')
                 .each(function(d) {
                     let pathEl = d3.select(this).node();
-                    let evalue = d.value.toFixed(2);
+                    let evalue = Number.isInteger(d.value) ? d.value : d.value.toFixed(2);
                     let midpoint = pathEl.getPointAtLength(pathEl.getTotalLength()/2);
 
                     let valueLabel = d3.select('#linker').append('text')

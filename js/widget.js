@@ -1,6 +1,6 @@
 import d3 from 'd3-selection';
 import {scaleQuantile, scaleQuantize} from "d3-scale";
-import {histogram, range as d3range} from 'd3-array';
+import {histogram, extent as d3extent, range as d3range} from 'd3-array';
 
 let svg = Symbol();
 
@@ -15,9 +15,9 @@ class Widget {
             .append('g')
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
-        let scaleMap = new Map();
+
         for(let k of Object.keys(graph.nodes[0].features)) {
-            let hs = histogram().domain()
+            let hs = histogram().domain(d3extent(graph.nodes.map(n => n.features[k])));
             //console.log(k, qs.quantiles().map(x => qs(x)));
         }
     }
