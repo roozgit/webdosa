@@ -19,9 +19,7 @@ class Widget {
         for(let k of Object.keys(graph.nodes[0].features)) {
             let hs = histogram().domain()
             //console.log(k, qs.quantiles().map(x => qs(x)));
-
         }
-
     }
 
 }

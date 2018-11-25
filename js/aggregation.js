@@ -383,7 +383,7 @@ class Aggregation {
             this[boxLinks].selectAll('path')
                 .each(function(d) {
                     let pathEl = d3.select(this).node();
-                    let evalue = d.value;
+                    let evalue = d.value.toFixed(2);
                     let midpoint = pathEl.getPointAtLength(pathEl.getTotalLength()/2);
 
                     let valueLabel = d3.select('#linker').append('text')
