@@ -15,7 +15,19 @@
 <body>
 <div class="column">
     <div id="controlCol" class="col2">
-        <div id="widgets"></div>
+        <div id="widgets" class="tabs">
+            <div class="tab">
+                <input type="radio" id="tab-1" name="tab-group-1" checked>
+                <label for="tab-1">Nodes</label>
+                <div id="tab-1-content" class="content"></div>
+            </div>
+
+            <div class="tab">
+                <input type="radio" id="tab-2" name="tab-group-1">
+                <label for="tab-2">Edges</label>
+                <div id = "tab-2-content" class="content"></div>
+            </div>
+        </div>
         <div id="layerMgr"></div>
     </div>
 

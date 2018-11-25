@@ -122,6 +122,12 @@ function intersect(points, rect) {
     else return undefined;
 }
 
+function wcount(arr, item) {
+    if(Array.isArray(arr))
+        return arr.reduce((acc, cur) => cur===item ? acc+1 : acc, 0);
+    throw "count needs an array as input";
+}
+
 function gradientGenerator(el, layer1, layer2, color1, color2, dir) {
     let c = '';
     if(el.startsWith("#a")) c= 'a';
@@ -144,5 +150,5 @@ function gradientGenerator(el, layer1, layer2, color1, color2, dir) {
         .attr("stop-opacity", 1);
 }
 
-export {arcLinks, getJsonFromUrl, ellipticalArc, samples, intersect, gradientGenerator};
+export {arcLinks, getJsonFromUrl, ellipticalArc, samples, intersect, gradientGenerator, wcount};
 

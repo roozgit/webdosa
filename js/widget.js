@@ -1,44 +1,89 @@
 import d3, {select} from 'd3-selection';
-import {histogram, extent as d3extent, max as d3max} from 'd3-array';
-import {scaleLinear} from "d3-scale";
+import {histogram, extent as d3extent, max as d3max, range as d3range} from 'd3-array';
+import {scaleLinear, scaleOrdinal} from "d3-scale";
+import {axisBottom} from "d3-axis";
+import {wcount} from "./util";
 
-let widgetDiv = Symbol();
+let widgetTab1 = Symbol();
+let widgetTab2 = Symbol();
 let wwidth = Symbol();
+const svgh = 60;
+const svgBotMargin = 25;
 
 class Widget {
-    constructor(el, graph, width, height, margin) {
-        this[widgetDiv] = el;
-        this[wwidth] = width;
-        this.createWidget(graph, 'nodes');
-        this.createWidget(graph, 'edges');
+    constructor(graph, width, height, margin) {
+        select('div#widgets')
+            .style('height', height+"px")
+            .style('width', width+"px")
+            .style('margin-left', margin.left+"px")
+            .style('margin-top', margin.top+"px")
+            .style('margin-right', margin.right+"px")
+            .style('margin-bottom', margin.bottom+"px");
+
+        this[widgetTab1] = select('#tab-1-content');
+        this[widgetTab2] = select('#tab-2-content');
+        this[wwidth] = width - 30;
+
+        this.createWidget(graph, 'nodes', this[widgetTab1]);
+        this.createWidget(graph, 'edges', this[widgetTab2]);
     }
 
-    createWidget(graph, group) {
+    createWidget(graph, group, tab) {
         for(let k of Object.keys(graph[group][0].features)) {
             let values = graph[group].map(n => n.features[k]);
-            let xs = scaleLinear().domain(d3extent(values)).range([0,this[wwidth]]);
-            let bins = histogram().domain(xs.domain()).thresholds(xs.ticks(20))(values);
+
+            if(typeof values[0] !== "number") {
+                let vset = [...(new Set(values))];
+                let mapping = d3range(1, vset.length+1);
+                values = values.map(x => mapping[vset.indexOf(x)]);
+            }
+            let ext = d3extent(values);
+            let xs = scaleLinear().domain(ext).nice()
+                .range([0,this[wwidth]]);
+            let bins = histogram().domain(xs.domain()).thresholds(xs.ticks(40))(values);
+
             let y = scaleLinear()
                 .domain([0, d3max(bins, d => d.length)]).nice()
-                .range([45, 5]);
-            let chart = select(this[widgetDiv]).append("svg")
-                .attr('height',50)
-                .attr("fill", "lightgray");
-            chart
-                .selectAll("rect")
+                .range([svgh-svgBotMargin, 0]);
+
+            //let xAxis = axisBottom(xs).tickValues(xs.domain());
+
+            let chart = tab.append('svg')
+                .attr('id', "scent-" + k)
+                .attr('class', "scentedSvg")
+                .attr('height', svgh)
+                .attr('width', this[wwidth])
+                .attr("fill", "grey");
+
+            chart.selectAll("rect")
                 .data(bins)
                 .enter().append("rect")
                 .attr("x", d => xs(d.x0) + 1)
                 .attr("width", d => Math.max(0, xs(d.x1) - xs(d.x0) - 1))
                 .attr("y", d => y(d.length))
                 .attr("height", d => y(0) - y(d.length));
+
+            let estr = ext[1].toFixed(1);
+
+            chart.append('text')
+                .attr('class', "axis-tick")
+                .attr('x', 0)
+                .attr('y', svgh)
+                .text(ext[0].toFixed(1));
+            chart.append('text')
+                .attr('class', "axis-tick")
+                .attr('x', this[wwidth])
+                .attr('dx', `-${estr.length/2}em`)
+                .attr('y', svgh)
+                .text(ext[1].toFixed(1));
+
             chart.append('text')
                 .attr('x', this[wwidth]/2)
-                .attr('y', 0)
-                .attr('dy',"1em")
+                .attr('dx', "-1.5em")
+                .attr('y', svgh)
+                .attr('dy',"-0.5em")
                 .text(k)
-                .style('fill', "red");
-            //ydisp+=50
+                .style('fill', "grey");
         }
     }
 }

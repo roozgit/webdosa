@@ -24,9 +24,57 @@ td {
 }
 
 div#widgets {
-    height: 450px;
-    width: 200px;
     overflow-y: auto;
     overflow-x: hidden;
     border:  solid lightgrey;
+}
+
+/**https://css-tricks.com/functional-css-tabs-revisited **/
+.tabs {
+    position: relative;
+    min-height: 200px; /* This part sucks */
+    clear: both;
+    margin: 25px 0;
+}
+.tab {
+    float: left;
+}
+.tab label {
+    background: #eee;
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin-left: -1px;
+    position: relative;
+    left: 1px;
+}
+.tab [type=radio] {
+    display: none;
+}
+.content {
+    position: absolute;
+    top: 25px;
+    left: 0;
+    background: black;
+    right: 0;
+    bottom: 0;
+    padding: 5px;
+    border: 1px solid #ccc;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+[type=radio]:checked ~ label {
+    background: white;
+    border-bottom: 1px solid white;
+    z-index: 2;
+}
+[type=radio]:checked ~ label ~ .content {
+    z-index: 1;
+}
+
+.axis-tick {
+    font-size : .75em;
+}
+
+.scentedSvg {
+    margin-bottom : 20px;
 }

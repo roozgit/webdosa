@@ -8,9 +8,9 @@ import {Plotter} from './plotter';
 import {getJsonFromUrl} from "./util";
 
 
-let scWidgetWidth = 180;
-let detailWidth = 700;
-let infogWidth = 500;
+let scWidgetWidth = 200;
+let detailWidth = 680;
+let infogWidth = 550;
 let height = 750;
 let widget, layerMgr, detail, aggregation, svgplots, hgraph;
 
@@ -23,7 +23,7 @@ const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'la
 dispatch.on('dataLoad', function(graph) {
     hgraph = graph;
     console.log(hgraph);
-    widget = new Widget("#widgets", graph, scWidgetWidth, 2 *height /3,
+    widget = new Widget(graph, scWidgetWidth, 2 *height /3,
         {top: 5, right: 5, bottom: 5, left: 5});
     layerMgr = new LayerMgr("#layerMgr", scWidgetWidth, height / 3,
         {top: 10, right: 20, bottom: 100, left: 10});
