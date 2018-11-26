@@ -17,7 +17,7 @@ let widget, layerMgr, detail, aggregation, svgplots, hgraph;
 svgplots = new Map();
 
 const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'layerDeleted',
-    'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot');
+    'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot', 'toggleLayer');
 
 //Register events and design workflow in a series of callbacks here
 dispatch.on('dataLoad', function(graph) {
@@ -71,6 +71,16 @@ dispatch.on('updateBoxPlot', function(layerData) {
 
 dispatch.on('dragBoxPlot', function(newx, newy, marge) {
     svgplots.get(this).moveTo(newx + marge.left, newy + marge.top);
+});
+
+dispatch.on('toggleLayer', function(layerId) {
+    let layer = hgraph.layers.find(lay => lay.id===layerId);
+    layer.withinVisible = !layer.withinVisible;
+    layer.betweenVisible = !layer.betweenVisible;
+    if(!layer.withinVisible)
+        detail.hideNodes(layerId);
+    else
+        detail.showNodes(layerId);
 });
 
 export {dispatch};

@@ -17,14 +17,13 @@ let nodeIds = Symbol();
 let gBrushes = Symbol();
 let quadTree = Symbol();
 let brushes = Symbol();
-let defs = Symbol();
-let withinEdges = Symbol();
-let betweenEdges = Symbol();
+let hidden = Symbol();
 
 class Detail {
     constructor(el, graph, width, height, margin) {
         this[nodeIds] = new Set();
         this[brushes] = [];
+        this[hidden] = new Map();
 
         this[svg] = d3.select(el)
             .append('svg')
@@ -121,7 +120,6 @@ class Detail {
                     .x(d => xs(d.position.x))
                     .y(d => ys(d.position.y))
                     .addAll(graph.nodes);
-
             }
 
             if(updateMode) this[edgeGroup].remove();
@@ -379,6 +377,31 @@ class Detail {
             .filter(d=> removalObject.within.has(d.id) || removalObject.between.has(d.id))
             .remove();
      }
+
+     hideNodes(layerId) {
+        this[points].filter(d => d.layers[d.layers.length-1]===layerId)
+            .style('visibility', "hidden");
+         let cbrush = this[brushes].find(bru => bru.id===layerId);
+         cbrush.brush.filter(function() {
+             return false;
+         });
+         this[hidden].set(layerId, this[edgeGroup].selectAll('path')
+             .filter(d => d.branch.from.layers[d.branch.from.layers.length-1]===layerId ||
+                     d.branch.to.layers[d.branch.to.layers.length-1]===layerId).remove());
+     }
+
+    showNodes(layerId) {
+        this[points].filter(d => d.layers[d.layers.length - 1] === layerId)
+            .style('visibility', "visible");
+        let cbrush = this[brushes].find(bru => bru.id === layerId);
+        cbrush.brush.filter(function () {
+            return !event.button;
+        });
+        for(let node of this[hidden].get(layerId).nodes())
+        this[edgeGroup].append(function() {
+            return node;
+        });
+    }
 }
 
 function calcVisible(graph, xs, ys) {

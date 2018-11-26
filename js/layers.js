@@ -4,7 +4,7 @@ import {icon, library as flibrary} from "@fortawesome/fontawesome-svg-core";
 import {faTrash} from '@fortawesome/free-solid-svg-icons';
 import {faArrowUp} from '@fortawesome/free-solid-svg-icons';
 import {faArrowDown} from '@fortawesome/free-solid-svg-icons';
-import {faEye} from '@fortawesome/free-solid-svg-icons';
+import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
 
 let tbl = Symbol();
 
@@ -22,11 +22,13 @@ class LayerMgr {
         flibrary.add(faArrowUp);
         flibrary.add(faArrowDown);
         flibrary.add(faEye);
+        flibrary.add(faEyeSlash);
 
         const trashIcon = icon({ prefix: 'fas', iconName: 'trash' });
         const arrowUpIcon = icon({ prefix: 'fas', iconName: 'arrow-up' });
         const arrowDownIcon = icon({ prefix: 'fas', iconName: 'arrow-down' });
         const eyeIcon = icon({ prefix: 'fas', iconName: 'eye' });
+        const eyeSlashIcon = icon({ prefix: 'fas', iconName: 'eye-slash' });
 
         let layer = graph.layers.find(la => la.id ===layerId);
         let trow = this[tbl].append('tr')
@@ -84,27 +86,29 @@ class LayerMgr {
 
             //layer raise -5
             let td5 = trow.append('td')
-                .attr('class', 'fa fa-arrow-up')
                 .on("click", function () {
                     console.log("clicked me? up")
                 });
-
             td5.node().appendChild(arrowUpIcon['node'][0]);
 
             //layer lower -6
             let td6 = trow.append('td')
-                .attr('class', 'fa fa-arrow-down')
                 .on("click", function () {
                     console.log("clicked me? down")
                 });
-
             td6.node().appendChild(arrowDownIcon['node'][0]);
 
             //layer visible -7
             let td7 = trow.append('td')
-                .attr('class', 'fa fa-arrow-down')
                 .on("click", function () {
-                    console.log("clicked me? down")
+                    dispatch.call('toggleLayer', this, layerId);
+                    let attr = td7.select('svg').attr('data-icon');
+                    td7.node().removeChild(td7.node().childNodes[0]);
+                    if(attr === "eye") {
+                        td7.node().appendChild(eyeSlashIcon.node[0]);
+                    } else {
+                        td7.node().appendChild(eyeIcon.node[0]);
+                    }
                 });
             td7.node().appendChild(eyeIcon['node'][0]);
         }
