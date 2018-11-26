@@ -2,6 +2,7 @@ import d3 from 'd3-selection';
 import {scaleLinear} from "d3-scale";
 import {extent as d3extent} from "d3-array";
 import {area} from "d3-shape";
+import {dispatch} from "./index"
 
 let svg = Symbol();
 let scaleX = Symbol();
@@ -62,6 +63,7 @@ class Plotter {
 
         let fx = gdata.map(d => +d.features[featureX]);
         let fy = gdata.map(d => +d.features[featureY]);
+        let ids = gdata.map(d => d.data.id);
 
         this[scaleX] = scaleLinear().domain(d3extent(fx)).range([0, this.pwidth-2*plotMargin]);
         this[scaleY] = scaleLinear().domain(d3extent(fy)).range([this.pheight-2*plotMargin, 0]);
@@ -70,7 +72,7 @@ class Plotter {
         let posy = fy.map(d => this[scaleY](d));
 
         let pos = posx.map((d, i) => {
-            return [d, posy[i]];
+            return [d, posy[i], ids[i]];
         });
 
         switch(plottype) {
@@ -83,8 +85,15 @@ class Plotter {
                     .append('circle')
                     .attr('cx', d => d[0])
                     .attr('cy', d => d[1])
-                    .attr('r', 2)
-                    .attr('fill', this[pcolor]);
+                    .attr('r', 3)
+                    .attr('fill', this[pcolor])
+                    .attr('stroke', this[pcolor])
+                    .on('mouseover', function(d) {
+                        dispatch.call('pointHighlight', this, d[2]);
+                    })
+                    .on('mouseout', function() {
+                        dispatch.call('pointDeHighlight');
+                    });
                 break;
             case "area":
                 pos.sort((a, b) => a[0]-b[0]);

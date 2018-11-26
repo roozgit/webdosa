@@ -123,7 +123,14 @@ class Widget {
 
         targetWidgetX.brushGroup.select('rect.selection').attr('fill', layer.color);
         targetWidgetY.brushGroup.select('rect.selection').attr('fill', layer.color);
+    }
 
+    fillInfo(pid, nodeData) {
+        let par = select('div#widgets #tab-3-content');
+        par.selectAll('pre').remove();
+        par.append('pre')
+            .text(JSON.stringify(nodeData))
+            .style('color', "lightgrey");
     }
 }
 

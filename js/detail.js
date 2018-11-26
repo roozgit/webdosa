@@ -145,7 +145,7 @@ class Detail {
                     .selectAll('circle')
                     .data(graph.nodes).enter()
                     .append('circle')
-                    .attr('id', d => d.data.id)
+                    .attr('id', d => "c"+d.data.id)
                     .attr('class', 'dataPoints')
                     .attr('stroke', "lightgray")
                     .attr('cx', d => xs(d.position.x))
@@ -242,7 +242,8 @@ class Detail {
              }
              let bru = d3.select(`#brush-${layerId}`);
              bru.selectAll('rect.handle')
-                 .attr('fill', graph.layers.find(la => la.id===layerId).color);
+                 .attr('fill', graph.layers.find(la => la.id===layerId).color)
+                 .attr('opacity', .5);
 
              if(newBrushFlag)
                  this.createBrush(graph, xs, ys);
@@ -416,6 +417,24 @@ class Detail {
         this[edgeGroup].append(function() {
             return node;
         });
+    }
+
+    highlight(nodeId) {
+        let ciel = document.getElementById('c'+nodeId);
+        let cx = ciel.getAttribute('cx');
+        let cy = ciel.getAttribute('cy');
+        this[nodeGroup].append('circle')
+            .attr('id', "nodeHighlighted")
+            .attr('cx', cx)
+            .attr('cy', cy)
+            .attr('r', 10)
+            .attr('fill', "#99FF66")
+            .attr('stroke-width', "4px");
+    }
+
+    deHighlight() {
+        let ciel = document.getElementById('nodeHighlighted');
+        ciel.remove();
     }
 }
 
