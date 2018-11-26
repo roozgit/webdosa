@@ -83,7 +83,7 @@ class Plotter {
                     .append('circle')
                     .attr('cx', d => d[0])
                     .attr('cy', d => d[1])
-                    .attr('r', 1)
+                    .attr('r', 2)
                     .attr('fill', this[pcolor]);
                 break;
             case "area":
