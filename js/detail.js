@@ -7,6 +7,7 @@ import {brush as d3brush} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks, gradientGenerator} from './util';
 import {zoom} from "d3-zoom";
+import {hsl} from "d3-color";
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -206,6 +207,8 @@ class Detail {
                  .attr('stroke', d => {
                      let nlayers = graph.nodeMap.get(d.data.id).layers;
                      let nlayer = nlayers[nlayers.length-1];
+                     //let colo = hsl();
+                     //return colo.brighter(1.5);
                      return graph.layers.find(lay => lay.id === nlayer).color;
                  });
 

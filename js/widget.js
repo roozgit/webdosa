@@ -1,8 +1,7 @@
 import d3, {select} from 'd3-selection';
 import {histogram, extent as d3extent, max as d3max, range as d3range} from 'd3-array';
-import {scaleLinear, scaleOrdinal} from "d3-scale";
-import {axisBottom} from "d3-axis";
-import {wcount} from "./util";
+import {scaleLinear} from "d3-scale";
+import {brushX} from "d3-brush";
 
 let widgetTab1 = Symbol();
 let widgetTab2 = Symbol();
@@ -29,6 +28,12 @@ class Widget {
     }
 
     createWidget(graph, group, tab) {
+        let brushed = function() {
+            let brushExt = d3.event.selection;
+            let extents = brushExt.map(d => this.scaler(d));
+
+        };
+
         for(let k of Object.keys(graph[group][0].features)) {
             let values = graph[group].map(n => n.features[k]);
 
@@ -45,8 +50,6 @@ class Widget {
             let y = scaleLinear()
                 .domain([0, d3max(bins, d => d.length)]).nice()
                 .range([svgh-svgBotMargin, 0]);
-
-            //let xAxis = axisBottom(xs).tickValues(xs.domain());
 
             let chart = tab.append('svg')
                 .attr('id', "scent-" + k)
@@ -84,8 +87,19 @@ class Widget {
                 .attr('dy',"-0.5em")
                 .text(k)
                 .style('fill', "grey");
+
+            //brush creation for each chart
+            let  brush = brushX()
+                .extent([[0, 0], [this[wwidth], svgh - svgBotMargin]])
+                .on("brush end", brushed.bind({group: group, feature: k, scaler: xs}));
+
+            chart.append("g")
+                .attr("class", "scentedBrush")
+                .attr('id', "scentedBrush-" + k)
+                .call(brush)
         }
     }
+
 }
 
 

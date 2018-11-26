@@ -206,18 +206,6 @@ class HGraph {
             selectedLayer.selected = true;
     }
 
-    // getAdj(node) {
-    //     return this.adjList.get(node);
-    // }
-    //
-    // nodes() {
-    //     return this.nodes;
-    // }
-    //
-    // edges() {
-    //     return this.edges;
-    // }
-
 }
 
 export {HGraph};

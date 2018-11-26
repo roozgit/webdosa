@@ -78,3 +78,8 @@ div#widgets {
 .scentedSvg {
     margin-bottom : 20px;
 }
+
+#widgets .selection {
+    fill: red;
+    fill-opacity: 0.3;
+}
