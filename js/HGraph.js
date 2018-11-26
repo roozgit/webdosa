@@ -163,11 +163,12 @@ class HGraph {
         for(let nodeId of nodeIds) {
             let allNodeLayers = this.nodeMap.get(nodeId).layers;
             let currentLayer = allNodeLayers[allNodeLayers.length - 1];
-            if(currentLayer < layer) {
+            let currentLayerIdx = this.layers.findIndex(lay => lay.id===currentLayer);
+            if(currentLayerIdx < curnIdx) {
                 allNodeLayers.push(layer);
                 curNodes.add(nodeId);
                 this.addEdges(nodeId, curLayer);
-                this.layers[currentLayer].members.delete(nodeId);
+                this.layers[currentLayerIdx].members.delete(nodeId);
                 this.removeEdges(nodeId, this.layers[currentLayer]);
             }
         }
@@ -183,10 +184,10 @@ class HGraph {
         let withins = layer.within;
         let betweens = layer.between;
         let mems = layer.members;
-        for(let nodeId of layer.members) {
+        for(let nodeId of mems) {
             let node = this.nodeMap.get(nodeId);
             let nodeLayers = node.layers;
-            let thisLayerIdx = nodeLayers.findIndex(la => la.id===layer.id);
+            let thisLayerIdx = nodeLayers.findIndex(la => la.id===layerId);
             nodeLayers.splice(thisLayerIdx, 1);
             let newNodeLayerId = nodeLayers[nodeLayers.length-1];
             let newNodeLayer = this.layers.find(la => la.id === newNodeLayerId);
