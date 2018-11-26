@@ -8,6 +8,7 @@ let scaleX = Symbol();
 let scaleY = Symbol();
 let pcolor = Symbol();
 let gplot = Symbol();
+let plabel = Symbol();
 
 const plottypes = ["scatter", "bar", "line", "area"];
 const plotMargin = 15;
@@ -30,7 +31,7 @@ class Plotter {
             .attr('width', this.pwidth)
             .attr('height', this.pheight);
 
-        this[svg].append('text')
+        this[plabel] = this[svg].append('text')
             .attr('x', this.pwidth /2 - plotMargin)
             .attr('y', 0)
             .attr('dx', "-3.5em")
@@ -96,15 +97,16 @@ class Plotter {
                     .datum(pos)
                     .attr('d', area1)
                     .attr('fill', this[pcolor]);
-
-
                 break;
-
         }
     }
 
     moveTo(x, y) {
         this[svg].attr('x', x).attr('y', y);
+    }
+
+    setLabel(labelText) {
+        this[plabel].text(labelText);
     }
 }
 

@@ -44,11 +44,13 @@ class LayerMgr {
         //layer label -2
         trow.append('td').text(layer.label)
             .attr("contentEditable",true)
-            .on("keyup", function() {
+            .on("keydown", function() {
                 if(d3.event.code === "Enter") {
+                    d3.event.preventDefault();
                     //console.log(select(this).text());
                     layer.label = select(this).text();
-                    //dispatch.call('layerLabelUpdate');
+                    d3.select(this).node().blur();
+                    dispatch.call('layerLabelUpdate', this, layerId);
                 }
             });
 

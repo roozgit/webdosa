@@ -17,7 +17,7 @@ let widget, layerMgr, detail, aggregation, svgplots, hgraph;
 svgplots = new Map();
 
 const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'layerDeleted',
-    'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot', 'toggleLayer');
+    'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot', 'toggleLayer', 'layerLabelUpdate');
 
 //Register events and design workflow in a series of callbacks here
 dispatch.on('dataLoad', function(graph) {
@@ -83,6 +83,10 @@ dispatch.on('toggleLayer', function(layerId) {
         detail.hideNodes(layerId);
     else
         detail.showNodes(layerId);
+});
+
+dispatch.on('layerLabelUpdate', function(layerId) {
+   svgplots.get(layerId).setLabel(hgraph.layers.find(lay => lay.id===layerId).label);
 });
 
 export {dispatch};
