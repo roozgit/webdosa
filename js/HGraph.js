@@ -125,11 +125,13 @@ class HGraph {
         let topLayerId = d3max(this.layers.map(la => la.id));
         let newLayerId = topLayerId + 1;
 
+        this.layers.forEach(lay => lay.selected = false);
         this.layers.push({id: newLayerId, members: new Set(), label: "layer-"+newLayerId,
-            color: this.colorScale(newLayerId-1), selected: false,
+            color: this.colorScale(newLayerId-1), selected: true,
             within : new Set(), between: new Set(),
             withinVisible: true,
             betweenVisible: true});
+
         let newLayer = this.layers[this.layers.length-1];
         //let newLayerMembers = new Set();
         for(let nodeId of nodeIds) {
@@ -203,8 +205,7 @@ class HGraph {
     selectLayer(layerId) {
         this.layers.forEach(la => la.selected = false);
         let selectedLayer = this.layers.find(la => la.id===layerId);
-        if(selectedLayer)
-            selectedLayer.selected = true;
+        selectedLayer.selected = true;
     }
 
 }

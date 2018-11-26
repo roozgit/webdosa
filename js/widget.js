@@ -6,6 +6,8 @@ import {brushX} from "d3-brush";
 let widgetTab1 = Symbol();
 let widgetTab2 = Symbol();
 let wwidth = Symbol();
+let widgetMap = Symbol();
+
 const svgh = 60;
 const svgBotMargin = 25;
 
@@ -22,6 +24,7 @@ class Widget {
         this[widgetTab1] = select('#tab-1-content');
         this[widgetTab2] = select('#tab-2-content');
         this[wwidth] = width - 30;
+        this[widgetMap] = new Map();
 
         this.createWidget(graph, 'nodes', this[widgetTab1]);
         this.createWidget(graph, 'edges', this[widgetTab2]);
@@ -30,8 +33,8 @@ class Widget {
     createWidget(graph, group, tab) {
         let brushed = function() {
             let brushExt = d3.event.selection;
-            let extents = brushExt.map(d => this.scaler(d));
-
+            //let extents = brushExt.map(d => this.scaler(d));
+            //console.log(this);
         };
 
         for(let k of Object.keys(graph[group][0].features)) {
@@ -52,10 +55,10 @@ class Widget {
                 .range([svgh-svgBotMargin, 0]);
 
             let chart = tab.append('svg')
-                .attr('id', "scent-" + k)
+                .attr('id', "scent-" + group + "-" + k)
                 .attr('class', "scentedSvg")
                 .attr('height', svgh)
-                .attr('width', this[wwidth])
+                .attr('width', this[wwidth]+10)
                 .attr("fill", "grey");
 
             chart.selectAll("rect")
@@ -93,14 +96,35 @@ class Widget {
                 .extent([[0, 0], [this[wwidth], svgh - svgBotMargin]])
                 .on("brush end", brushed.bind({group: group, feature: k, scaler: xs}));
 
-            chart.append("g")
+            let brushGroup = chart.append('g')
                 .attr("class", "scentedBrush")
-                .attr('id', "scentedBrush-" + k)
-                .call(brush)
+                .attr('id', "scentedBrush-" + group + "-" + k);
+            brushGroup.call(brush);
+
+            this[widgetMap].set(group+"-"+k, {chart: chart, brushGroup: brushGroup, brushFunc: brush, scaler: xs});
         }
     }
 
-}
+    moveWidgetSelection(graph, layerId, featureX, featureY) {
+        let layer = graph.layers.find(lay => lay.id===layerId);
+        if(layer.members.size===0) return;
+        let mfx = [...layer.members].map(mx => graph.nodeMap.get(mx).features[featureX]);
+        let mfxe = d3extent(mfx);
+        let mfy = [...layer.members].map(mx => graph.nodeMap.get(mx).features[featureY]);
+        let mfye = d3extent(mfy);
 
+        let targetWidgetX = this[widgetMap].get('nodes-'+featureX);
+        targetWidgetX.brushGroup.call(targetWidgetX.brushFunc.move,
+            [targetWidgetX.scaler(mfxe[0]), targetWidgetX.scaler(mfxe[1])]);
+
+        let targetWidgetY = this[widgetMap].get('nodes-'+featureY);
+        targetWidgetY.brushGroup.call(targetWidgetY.brushFunc.move,
+            [targetWidgetY.scaler(mfye[0]), targetWidgetY.scaler(mfye[1])]);
+
+        targetWidgetX.brushGroup.select('rect.selection').attr('fill', layer.color);
+        targetWidgetY.brushGroup.select('rect.selection').attr('fill', layer.color);
+
+    }
+}
 
 export {Widget};

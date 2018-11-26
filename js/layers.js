@@ -1,4 +1,4 @@
-import d3 from 'd3-selection';
+import d3, {select} from 'd3-selection';
 import {dispatch} from './index';
 import {icon, library as flibrary} from "@fortawesome/fontawesome-svg-core";
 import {faTrash} from '@fortawesome/free-solid-svg-icons';
@@ -10,7 +10,7 @@ let tbl = Symbol();
 
 class LayerMgr {
     constructor(el, width, height, margin) {
-        this[tbl] = d3.select(el)
+        this[tbl] = select(el)
             .append('table')
             .attr('id', 'tblLayerMgr')
             .attr('width', width + margin.right + margin.left)
@@ -35,20 +35,10 @@ class LayerMgr {
             .attr('id', "layer-"+layerId);
 
         //layer id -1
-        trow.append('td').text(layer.id)
-            .on('click', function() {
+        let td1 = trow.append('td').text(layer.id)
+            .on('click', () => {
                 graph.selectLayer(layer.id);
-                d3.select('#tblLayerMgr')
-                    .selectAll('tr')
-                    .selectAll('td:nth-child(1)')
-                    .style('background-color', "black");
-                if(layer.selected) {
-                    d3.select(this).style('background-color', "#484848");
-                    d3.select(this.nextSibling).style('background-color', "#484848");
-                } else {
-                    d3.select(this).style('background-color', "black");
-                    d3.select(this.nextSibling).style('background-color', "black");
-                }
+                this.selectRow(td1.node());
             });
 
         //layer label -2
@@ -56,8 +46,8 @@ class LayerMgr {
             .attr("contentEditable",true)
             .on("keyup", function() {
                 if(d3.event.code === "Enter") {
-                    //console.log(d3.select(this).text());
-                    layer.label = d3.select(this).text();
+                    //console.log(select(this).text());
+                    layer.label = select(this).text();
                     //dispatch.call('layerLabelUpdate');
                 }
             });
@@ -76,7 +66,7 @@ class LayerMgr {
                 .on("click", function () {
                     if (layerId > 0) {
                         dispatch.call('layerDeleted', this, layerId);
-                        d3.select(this).node().parentNode.remove();
+                        select(this).node().parentNode.remove();
                         updateLayerView(graph.layers);
                     } else {
                         alert("Can't delete layer this layer!");
@@ -112,13 +102,34 @@ class LayerMgr {
                 });
             td7.node().appendChild(eyeIcon['node'][0]);
         }
+
+        this.selectRow(td1.node());
     }
+
+    selectRowById(id) {
+        let tds = select('#tblLayerMgr')
+            .selectAll('tr')
+            .selectAll('td:nth-child(1)');
+        this.selectRow(tds.nodes().find(n => +n.innerHTML === id));
+
+    }
+
+    selectRow(elem) {
+
+        select('#tblLayerMgr')
+            .selectAll('tr')
+            .selectAll('td:nth-child(1), td:nth-child(2)')
+            .style('background-color', "black");
+        select(elem).style('background-color', "#484848");
+        select(elem.nextSibling).style('background-color', "#484848");
+    }
+
 }
 
 function updateLayerView(layers) {
-    d3.select('#tblLayerMgr').selectAll('tr')
+    select('#tblLayerMgr').selectAll('tr')
         .each(function(_, i) {
-            d3.select(this).select('td:nth-child(3)')
+            select(this).select('td:nth-child(3)')
                 .text(layers[i].members.size);
         });
 }

@@ -18,12 +18,16 @@ let gBrushes = Symbol();
 let quadTree = Symbol();
 let brushes = Symbol();
 let hidden = Symbol();
+let featureX = Symbol();
+let featureY = Symbol();
 
 class Detail {
     constructor(el, graph, width, height, margin) {
         this[nodeIds] = new Set();
         this[brushes] = [];
         this[hidden] = new Map();
+        this[featureX] = "lng";
+        this[featureY] = "lat";
 
         this[svg] = d3.select(el)
             .append('svg')
@@ -73,12 +77,14 @@ class Detail {
 
         detailControlsX.on('change', () => {
             let feat = detailControlsX.node().value;
+            this[featureX] = feat;
             graph.nodes.forEach(n => n.position.x = n.features[feat]);
             redraw.call(this, true);
         });
 
         detailControlsY.on('change', () => {
             let feat = detailControlsY.node().value;
+            this[featureY] = feat;
             graph.nodes.forEach(n => n.position.y = n.features[feat]);
             redraw.call(this, true);
         });
@@ -154,15 +160,20 @@ class Detail {
             } else {
                 let xv = document.getElementById('xvar');
                 let yv = document.getElementById('yvar');
-                this[gBrushes].selectAll(`g:not(.brush-${xv ? xv.value : "lng"}-${yv ? yv.value : "lat"})`)
+                this[gBrushes]
+                    .selectAll(`g:not(.brush-${xv ? xv.value : "lng"}-${yv ? yv.value : "lat"})`)
                     .filter((_, i) => i > 0)
+                    .style('pointer-events', "none")
                     .style('visibility', "hidden");
+
                 this[gBrushes].selectAll('g').filter((_, i) => i === 0).remove();
                 this[brushes].pop();
                 this.createBrush(graph, xs, ys);
                 this.drawBrushes(document.getElementById('xvar'), document.getElementById('yvar'));
                 this[gBrushes].selectAll(`g.brush-${xv ? xv.value : "lng"}-${yv ? yv.value : "lat"}`)
-                    .style('visibility', "");
+                    .style('pointer-events', "all")
+                    .style('visibility', "visible");
+
             }
         }
      }
@@ -197,7 +208,8 @@ class Detail {
              this[nodeIds] = search(this[points], this[quadTree],
                  extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
 
-             dispatch.call('layerMoved', this, {layer: layerId, nodeIds: this[nodeIds]});
+             dispatch.call('layerMoved', this, {layer: layerId, nodeIds: this[nodeIds],
+                 featureX: this[featureX], featureY: this[featureY]});
              let visibleArr = calcVisible(graph, xs, ys);
              this.updateExitEnter(visibleArr, graph);
 
@@ -249,7 +261,10 @@ class Detail {
                          let dp = [d.position.x, d.position.y];
                          let selected = (xs(dp[0]) >= x0) && (xs(dp[0]) < x3) && (ys(dp[1]) >= y0) && (ys(dp[1]) < y3);
                          if(selected) {
-                             results.add(d.data.id);
+                             let slayerId = d.layers[d.layers.length-1];
+                             if(slayerId===0) results.add(d.data.id);
+                             else if(graph.layers.find(lay => lay.id===slayerId).withinVisible)
+                                     results.add(d.data.id);
                          }
                      } while (node = node.next);
                  }

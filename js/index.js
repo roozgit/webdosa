@@ -43,7 +43,9 @@ dispatch.on('layerAdded', function(selectedIds) {
 
 dispatch.on('layerMoved', function(selectedIds) {
     hgraph.updateLayer(selectedIds.layer, selectedIds.nodeIds);
-    updateLayerView(hgraph.layers, selectedIds.layer)
+    updateLayerView(hgraph.layers, selectedIds.layer);
+    layerMgr.selectRowById(selectedIds.layer);
+    widget.moveWidgetSelection(hgraph, selectedIds.layer, selectedIds.featureX, selectedIds.featureY);
 });
 
 dispatch.on('layerDeleted', function(layerId) {
