@@ -111,7 +111,6 @@ class LayerMgr {
             .selectAll('tr')
             .selectAll('td:nth-child(1)');
         this.selectRow(tds.nodes().find(n => +n.innerHTML === id));
-
     }
 
     selectRow(elem) {

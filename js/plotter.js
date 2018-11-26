@@ -1,14 +1,17 @@
 import d3 from 'd3-selection';
 import {scaleLinear} from "d3-scale";
 import {extent as d3extent} from "d3-array";
+import {area} from "d3-shape";
 
 let svg = Symbol();
 let scaleX = Symbol();
 let scaleY = Symbol();
 let pcolor = Symbol();
+let gplot = Symbol();
 
 const plottypes = ["scatter", "bar", "line", "area"];
-const margin = 15;
+const plotMargin = 15;
+
 
 class Plotter {
     constructor(location, svgRect, id, label, color) {
@@ -28,10 +31,23 @@ class Plotter {
             .attr('height', this.pheight);
 
         this[svg].append('text')
-            .attr('x', this.pwidth /2 - margin)
-            .attr('y', this.pheight - margin)
+            .attr('x', this.pwidth /2 - plotMargin)
+            .attr('y', 0)
+            .attr('dx', "-3.5em")
+            .attr('dy', "1em")
             .text(label)
             .style('fill', color);
+
+        this[gplot] = this[svg].append('g')
+            .attr('class', "clipperPath")
+            .attr('transform', `translate(${plotMargin}, ${plotMargin})`);
+
+        // this[svg].append('line')
+        //     .attr('x1', plotMargin)
+        //     .attr('y1', this.pheight - plotMargin)
+        //     .attr('x2', this.pwidth - plotMargin)
+        //     .attr('y2', this.pheight - plotMargin)
+        //     .attr('stroke', this[pcolor]);
     }
 
     plot(gdata, label, featureX, featureY, plottype) {
@@ -46,8 +62,8 @@ class Plotter {
         let fx = gdata.map(d => +d.features[featureX]);
         let fy = gdata.map(d => +d.features[featureY]);
 
-        this[scaleX] = scaleLinear().domain(d3extent(fx)).range([0, this.pwidth]);
-        this[scaleY] = scaleLinear().domain(d3extent(fy)).range([this.pheight, 0]);
+        this[scaleX] = scaleLinear().domain(d3extent(fx)).range([0, this.pwidth-2*plotMargin]);
+        this[scaleY] = scaleLinear().domain(d3extent(fy)).range([this.pheight-2*plotMargin, 0]);
 
         let posx = fx.map(d => this[scaleX](d));
         let posy = fy.map(d => this[scaleY](d));
@@ -60,15 +76,30 @@ class Plotter {
             case "scatter":
             case "bar":
             case "line":
-            case "area":
-                this[svg].selectAll('circle').remove();
-                this[svg].selectAll('circle').data(pos).enter()
+                this[gplot].selectAll('*').remove();
+                this[gplot]
+                    .selectAll('circle').data(pos).enter()
                     .append('circle')
                     .attr('cx', d => d[0])
                     .attr('cy', d => d[1])
-                    .attr('stroke', "gray")
                     .attr('r', 1)
                     .attr('fill', this[pcolor]);
+                break;
+            case "area":
+                pos.sort((a, b) => a[0]-b[0]);
+                this[gplot].selectAll('*').remove();
+                let area1 = area()
+                    .x(d => d[0])
+                    .y0(this[scaleY](0))
+                    .y1(d => d[1]);
+                this[gplot].append('path')
+                    .datum(pos)
+                    .attr('d', area1)
+                    .attr('fill', this[pcolor]);
+
+
+                break;
+
         }
     }
 
@@ -77,4 +108,4 @@ class Plotter {
     }
 }
 
-export {Plotter};
+export {Plotter, plotMargin};

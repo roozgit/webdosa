@@ -4,6 +4,7 @@ import {drag} from "d3-drag";
 import {dispatch} from './index';
 import {scaleLog} from "d3-scale";
 import {sum as d3sum, min as d3min} from 'd3-array';
+import {plotMargin} from "./plotter";
 
 let svg = Symbol();
 let boxLinks = Symbol();
@@ -65,6 +66,11 @@ class Aggregation {
 
         d3.select('#svgAggregation').insert('defs', "g")
             .attr('id', "aggDefs");
+        d3.select('#aggDefs').append("clipPath")
+            .attr("id", "aggClip")
+            .append("rect")
+            .attr("width", boxWidth - 2 * plotMargin)
+            .attr("height", boxWidth - 2 * plotMargin);
 
         this[swidth] = width;
         this[sheight] = height;
