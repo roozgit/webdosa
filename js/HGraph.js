@@ -51,8 +51,9 @@ class HGraph {
             nodesVisible: true, edgesVisible : false,
             within: new Set(Array.from(this.edgeMap.keys())),
             between : new Set(),
-            withinVisible: false,
-            betweenVisible: false
+            totalVisibility: false,
+            withinVisible: (x => false),
+            betweenVisible: (x => false)
         });
     }
 
@@ -129,8 +130,9 @@ class HGraph {
         this.layers.push({id: newLayerId, members: new Set(), label: "layer-"+newLayerId,
             color: this.colorScale(newLayerId-1), selected: true,
             within : new Set(), between: new Set(),
-            withinVisible: true,
-            betweenVisible: true});
+            totalVisibility: true,
+            withinVisible: (x => true),
+            betweenVisible: (x => true)});
 
         let newLayer = this.layers[this.layers.length-1];
         //let newLayerMembers = new Set();

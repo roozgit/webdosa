@@ -7,7 +7,6 @@ import {brush as d3brush} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks, gradientGenerator} from './util';
 import {zoom} from "d3-zoom";
-import {hsl} from "d3-color";
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -196,7 +195,7 @@ class Detail {
          function brushStart() {
              brushingFlag = false;
              layerId = +d3.select(this).attr('id').split("-")[1];
-             newBrushFlag = !curBrushes.map(bru => bru.id).includes(layerId + 1);
+             newBrushFlag = d3max(curBrushes.map(bru => bru.id)) < layerId + 1;
              if(newBrushFlag)
                  dispatch.call('layerAdded', {'layerId': layerId}, new Set());
          }
@@ -263,8 +262,10 @@ class Detail {
                          let selected = (xs(dp[0]) >= x0) && (xs(dp[0]) < x3) && (ys(dp[1]) >= y0) && (ys(dp[1]) < y3);
                          if(selected) {
                              let slayerId = d.layers[d.layers.length-1];
+                             let slayer = graph.layers.find(lay => lay.id===slayerId);
+                             if(slayer==undefined) console.error("slayer undefined: " + slayerId);
                              if(slayerId===0) results.add(d.data.id);
-                             else if(graph.layers.find(lay => lay.id===slayerId).withinVisible)
+                             else if(slayer.withinVisible(d))
                                      results.add(d.data.id);
                          }
                      } while (node = node.next);
@@ -441,23 +442,26 @@ class Detail {
 function calcVisible(graph, xs, ys) {
     let visibleSet = new Set();
     for(let lay of graph.layers) {
-        if(lay.withinVisible) {
-            for(let branchId of lay.within)
+        for(let branchId of lay.within) {
+            let branch = graph.edgeMap.get(branchId);
+            if(lay.withinVisible(branch.from) && lay.withinVisible(branch.to))
                 visibleSet.add(branchId);
         }
-        if(lay.betweenVisible) {
-            [...lay.between].filter(branchId => {
-                let branch = graph.edgeMap.get(branchId);
-                let slayer = branch.from.layers[branch.from.layers.length-1];
-                let tlayer = branch.to.layers[branch.to.layers.length-1];
-                let gslayer = graph.layers.find(la => la.id===slayer);
-                let gtlayer = graph.layers.find(la => la.id===tlayer);
-                return gslayer.betweenVisible && gtlayer.betweenVisible;
-            }).forEach(branchId => visibleSet.add(branchId));
-        }
+
+
+        [...lay.between].filter(branchId => {
+            let branch = graph.edgeMap.get(branchId);
+            let slayer = branch.from.layers[branch.from.layers.length-1];
+            let tlayer = branch.to.layers[branch.to.layers.length-1];
+            let gslayer = graph.layers.find(la => la.id===slayer);
+            let gtlayer = graph.layers.find(la => la.id===tlayer);
+            return gslayer.betweenVisible(branch.from) && gtlayer.betweenVisible(branch.to);
+        }).forEach(branchId => visibleSet.add(branchId));
     }
-    //Should we use id or position. When there is a lot of overlap on nodes,
-    //position seems more apt
+
+    /*This part calculates svg paths to put in the graph
+    Should we use id or position?? When there is a lot of overlap on nodes,
+    position seems more apt*/
     let visibleMap = new Map();
     for(let branchId of visibleSet) {
         let branch = graph.edgeMap.get(branchId);

@@ -147,8 +147,8 @@ class Aggregation {
     }
 
     calcAggregates(graph, ffunc) {
-        let layerData = graph.layers.filter(lay => lay.withinVisible && lay.betweenVisible);
-        let withinAgg = layerData.map(lay => [lay.id, lay.within])
+        let layerData = graph.layers.filter(lay => lay.totalVisibility);
+        let withinAgg = layerData.map(lay => [lay.id, [...lay.within].filter(d => lay.withinVisible(d))])
             .map(wit => {
                 let dest = wit[0];
                 if(dest)
@@ -161,17 +161,18 @@ class Aggregation {
                 else return undefined;
             }).filter(arr => arr);
 
-        let betweenAgg = layerData.map(lay => [lay.id, lay.between])
+        let betweenAgg = layerData.map(lay => [lay.id, [...lay.between].filter(d => lay.betweenVisible(d))])
             .map(wit => {
                 let betMap = new Map();
                 for(let d of wit[1]) {
                     let branch = graph.edgeMap.get(d);
                     let slayerId = branch.from.layers[branch.from.layers.length-1];
                     if(slayerId !== wit[0]) continue;
+                    //let slayer = graph.layers.find(lx => lx.id===slayerId);
                     let tlayerId = branch.to.layers[branch.to.layers.length-1];
                     if(tlayerId === wit[0]) continue;
                     let tlayer = graph.layers.find(lx => lx.id===tlayerId);
-                    if(tlayer.betweenVisible) {
+                    if(tlayer.betweenVisible(branch.to)) {
                         let madeupId = slayerId+"-"+tlayerId;
                         betMap.has(madeupId) ?
                             betMap.set(madeupId, betMap.get(madeupId).concat([d])) :
@@ -206,7 +207,7 @@ class Aggregation {
     }
 
     updateOverview(graph) {
-        let laycopy = graph.layers.filter(lay => lay.withinVisible && lay.betweenVisible);
+        let laycopy = graph.layers.filter(lay => lay.totalVisibility);
         let allArr = this.calcAggregates(graph, this[arrowFunc]);
 
         let extentSelector;
