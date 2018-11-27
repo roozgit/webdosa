@@ -35,6 +35,7 @@ class Widget {
             let brushExt = d3.event.selection;
             //let extents = brushExt.map(d => this.scaler(d));
             //console.log(this);
+            console.log(graph.layers.filter(d => d.selected)[0].id);
         };
 
         for(let k of Object.keys(graph[group][0].features)) {

@@ -199,7 +199,6 @@ class HGraph {
             newNodeLayer.members.add(nodeId);
             this.addEdges(nodeId, newNodeLayer);
         }
-
         this.layers.splice(idx, 1);
         for(let lidx = 0; lidx < this.layers.length; lidx++) {
             let higherLayer = this.layers[lidx];
@@ -218,6 +217,7 @@ class HGraph {
                 for(let d of badVias.map(d => d.data.id)) betweens.add(d);
             }
         }
+        this.selectLayer(this.layers[this.layers.length-1].id);
 
         return {members: [...mems].map(dx => this.nodeMap.get(dx)),
             within: withins,

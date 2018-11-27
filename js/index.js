@@ -44,6 +44,7 @@ dispatch.on('layerAdded', function(selectedIds) {
 
 dispatch.on('layerMoved', function(selectedIds) {
     hgraph.updateLayer(selectedIds.layer, selectedIds.nodeIds);
+    hgraph.selectLayer(selectedIds.layer);
     updateLayerView(hgraph.layers, selectedIds.layer);
     layerMgr.selectRowById(selectedIds.layer);
     widget.moveWidgetSelection(hgraph, selectedIds.layer, selectedIds.featureX, selectedIds.featureY);
@@ -51,6 +52,7 @@ dispatch.on('layerMoved', function(selectedIds) {
 
 dispatch.on('layerDeleted', function(layerId) {
     let result = hgraph.deleteLayer(layerId);
+    layerMgr.selectRowById(hgraph.layers.find(lay => lay.selected).id);
     detail.removeBrush(layerId, result, hgraph);
     aggregation.removeLayerBox(layerId);
 });
