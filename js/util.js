@@ -98,6 +98,7 @@ function perp(p0, p1) {
 }
 
 function insideRect(point, rect) {
+    if(!point) return undefined;
     return point[0] >= rect.x && point[0] <= rect.x + rect.width
         && point[1] >= rect.y && point[1] <= rect.y + rect.height;
 }
@@ -106,13 +107,19 @@ function intersect(points, rect) {
     let forward = false, backward = false;
     let i,j;
     for(i=0, j= points.length-1; i < points.length-1, j>=0; i++, j--) {
-        if (insideRect(points[i], rect) &&
-            !insideRect(points[i + 1], rect)) {
+        let p1 = points[i];
+        let p2 = points[i+1];
+        if(!(p1 && p2)) return undefined;
+        if (insideRect(p1, rect) &&
+            !insideRect(p2, rect)) {
             forward = true;
             break;
         }
-        if (insideRect(points[j], rect) &&
-                !insideRect(points[j - 1], rect)) {
+        p1 = points[j];
+        p2 = points[j - 1];
+        if(!(p1 && p2)) return undefined;
+        if (insideRect(p1, rect) &&
+                !insideRect(p2, rect)) {
             backward = true;
             break;
         }

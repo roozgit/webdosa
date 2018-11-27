@@ -26,8 +26,8 @@ const displacementSelf = [
     {dx1 : boxWidth, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : 0, dir: "1,0", arrowRot: 180},
     {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : 0, dir: "1,1"},
     {dx1 : boxWidth, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,1"},
-    {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,0"}
-];
+    {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,0"}];
+
 const displacementBetween =
     {dx1 : boxWidth/2, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth/2, dir: "1,0"};
 
@@ -169,12 +169,10 @@ class Aggregation {
                 for(let d of wit[1]) {
                     let branch = graph.edgeMap.get(d);
                     let slayerId = branch.from.layers[branch.from.layers.length-1];
-                    if(slayerId !== wit[0]) continue;
-                    //let slayer = graph.layers.find(lx => lx.id===slayerId);
+                    let slayer = graph.layers.find(lx => lx.id===slayerId);
                     let tlayerId = branch.to.layers[branch.to.layers.length-1];
-                    if(tlayerId === wit[0]) continue;
                     let tlayer = graph.layers.find(lx => lx.id===tlayerId);
-                    if(tlayer.applyBetweenFilter(branch.to)) {
+                    if(slayer.applyBetweenFilter(branch) && tlayer.applyBetweenFilter(branch)) {
                         let madeupId = slayerId+"-"+tlayerId;
                         betMap.has(madeupId) ?
                             betMap.set(madeupId, betMap.get(madeupId).concat([d])) :
@@ -200,10 +198,7 @@ class Aggregation {
 
     removeLayerBox(layerId) {
         this[boxNodes].select('rect#box-'+layerId).remove();
-        this[boxLinks].selectAll('path').filter(d => {
-            if(d.source.id === layerId || d.target.id === layerId)
-                return true;
-        }).remove();
+        this[boxLinks].selectAll('path').filter(d => d.source.id === layerId || d.target.id === layerId).remove();
         d3.selectAll('.aggValues').remove();
         d3.select('#boxplot-'+layerId).remove();
     }
@@ -224,7 +219,7 @@ class Aggregation {
         }
 
         this[edgeScaler] = scaleLog().domain(extentSelector)
-            .range([1,80]).clamp(true);
+            .range([1,boxWidth/2]).clamp(true);
 
         let mmargin = this[amargin];
         let boxDragger = drag()
@@ -257,8 +252,8 @@ class Aggregation {
             .data(laycopy, la=>la.id).enter()
             .append('rect')
             .attr('id', d => "box-" + d.id)
-            .attr('x', (this[swidth]-150) * Math.random())
-            .attr('y', (this[sheight]-250) * Math.random())
+            .attr('x', (this[swidth]-boxWidth) * Math.random())
+            .attr('y', (this[sheight]-boxWidth) * Math.random())
             .attr('width', boxWidth)
             .attr('height', boxWidth)
             .attr('stroke', d => d.color)
@@ -338,8 +333,7 @@ class Aggregation {
             this[boxLinks].selectAll('path').filter(d => d.source.id!==d.target.id)
                 .each(function(d) {
                     paths.set(d.source.id + "-" + d.target.id,
-                        {pathBreak: samples(d3.select(this).node(), 12), pathData: d}
-                    );
+                        {pathBreak: samples(d3.select(this).node(), 12), pathData: d});
                     d3.select(this).remove();
                 });
             for(let pat of paths) {
@@ -348,44 +342,47 @@ class Aggregation {
                 let b2 = patsplit[1];
                 let isec1 = intersect(pat[1].pathBreak, rects.get(+b1));
                 let isec2 = intersect(pat[1].pathBreak, rects.get(+b2));
-                let newpat = arcLinks(isec1[0],isec1[1], isec2[0], isec2[1], 1, quadSep);
+                let newpat =
+                (isec1 && isec2) ?
+                    arcLinks(isec1[0],isec1[1], isec2[0], isec2[1], 1, quadSep) : undefined;
                 this[boxLinks].selectAll('path').filter(d => d.id === "bigPath-"+pat[0]).remove();
-                this[boxLinks].append('path')
-                    .datum(pat[1].pathData, d => d.source.id + "-" + d.target.id)
-                    .attr('id', pat[0])
-                    .attr("stroke-width", d => this[edgeScaler](Math.abs(d.value)))
-                    .attr('d', newpat)
-                    .attr("fill", "none")
-                    .attr("stroke", d => {
-                        if(d.source.id === d.target.id)
-                            return d.source.color;
-                        else {
-                            if(d.source.x <= d.target.x) {
-                                if(d3.select('#aggDefs').select(`#agrad-${d.source.id}-${d.target.id}-lr`)
-                                    .empty()) {
-                                    gradientGenerator('#aggDefs', d.source.id, d.target.id,
-                                        graph.layers.find(la => la.id===d.source.id).color,
-                                        graph.layers.find(la => la.id===d.target.id).color, "lr");
+                if(newpat)
+                    this[boxLinks].append('path')
+                        .datum(pat[1].pathData, d => d.source.id + "-" + d.target.id)
+                        .attr('id', pat[0])
+                        .attr("stroke-width", d => this[edgeScaler](Math.abs(d.value)))
+                        .attr('d', newpat)
+                        .attr("fill", "none")
+                        .attr("stroke", d => {
+                            if(d.source.id === d.target.id)
+                                return d.source.color;
+                            else {
+                                if(d.source.x <= d.target.x) {
+                                    if(d3.select('#aggDefs').select(`#agrad-${d.source.id}-${d.target.id}-lr`)
+                                        .empty()) {
+                                        gradientGenerator('#aggDefs', d.source.id, d.target.id,
+                                            graph.layers.find(la => la.id===d.source.id).color,
+                                            graph.layers.find(la => la.id===d.target.id).color, "lr");
+                                    }
+                                    return `url(#agrad-${d.source.id}-${d.target.id}-lr)`;
+                                } else {
+                                    if(d3.select('#aggDefs').select(`#agrad-${d.source.id}-${d.target.id}-rl`)
+                                        .empty()) {
+                                        gradientGenerator('#aggDefs', d.source.id, d.target.id,
+                                            graph.layers.find(la => la.id===d.target.id).color,
+                                            graph.layers.find(la => la.id===d.source.id).color, "rl");
+                                    }
+                                    return `url(#agrad-${d.source.id}-${d.target.id}-rl)`;
                                 }
-                                return `url(#agrad-${d.source.id}-${d.target.id}-lr)`;
-                            } else {
-                                if(d3.select('#aggDefs').select(`#agrad-${d.source.id}-${d.target.id}-rl`)
-                                    .empty()) {
-                                    gradientGenerator('#aggDefs', d.source.id, d.target.id,
-                                        graph.layers.find(la => la.id===d.target.id).color,
-                                        graph.layers.find(la => la.id===d.source.id).color, "rl");
+                            }
+                        })
+                        .attr('marker-end', d => {
+                            if(d.source.id !== d.target.id)
+                                if(d3.select('#arrowHead-' + d.target.id).empty()) {
+                                    markerGenerator(d.target.color, d.target.id);
                                 }
-                                return `url(#agrad-${d.source.id}-${d.target.id}-rl)`;
-                            }
-                        }
-                    })
-                    .attr('marker-end', d => {
-                        if(d.source.id !== d.target.id)
-                            if(d3.select('#arrowHead-' + d.target.id).empty()) {
-                                markerGenerator(d.target.color, d.target.id);
-                            }
-                            return `url(#arrowHead-${d.target.id})`;
-                    });
+                                return `url(#arrowHead-${d.target.id})`;
+                        });
             }
             d3.selectAll('.aggValues').remove();
             this[boxLinks].selectAll('path')

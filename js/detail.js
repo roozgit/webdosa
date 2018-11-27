@@ -265,8 +265,7 @@ class Detail {
                              let slayer = graph.layers.find(lay => lay.id===slayerId);
                              if(slayer==undefined)
                                  console.error("slayer is undefined: " + slayerId);
-                             if(slayerId===0) results.add(d.data.id);
-                             else if(slayer.totalVisibility) results.add(d.data.id);
+                             if(slayerId===0 || slayer.totalVisibility) results.add(d.data.id);
                          }
                      } while (node = node.next);
                  }
@@ -405,6 +404,7 @@ class Detail {
          this[hidden].set(layerId, this[edgeGroup].selectAll('path')
              .filter(d => d.branch.from.layers[d.branch.from.layers.length-1]===layerId ||
                      d.branch.to.layers[d.branch.to.layers.length-1]===layerId).remove());
+         //dispatch.call('overviewUpdate');
      }
 
     showNodes(layerId) {
@@ -418,6 +418,7 @@ class Detail {
         this[edgeGroup].append(function() {
             return node;
         });
+        dispatch.call('overviewUpdate');
     }
 
     highlight(nodeId) {
@@ -437,17 +438,25 @@ class Detail {
         let ciel = document.getElementById('nodeHighlighted');
         ciel.remove();
     }
+
+    moveBrush(brushId) {
+        let bid = this[brushes].find(d => d.id === brushId);
+        let curext = bid.extent();
+        let actual = this[gBrushes]
+            .select('#brush-'+brushId);
+        console.log(bid, curext, actual);
+        actual.call(bid.brush.move, curext);
+    }
 }
 
 function calcVisible(graph, xs, ys) {
     let visibleSet = new Set();
-    for(let lay of graph.layers) {
+    for(let lay of graph.layers.filter(lay => lay.totalVisibility)) {
         for(let branchId of lay.within) {
             let branch = graph.edgeMap.get(branchId);
-            if(lay.applyWithinFilter(branch.from) && lay.applyWithinFilter(branch.to))
+            if(lay.applyWithinFilter(branch))
                 visibleSet.add(branchId);
         }
-
 
         [...lay.between].filter(branchId => {
             let branch = graph.edgeMap.get(branchId);
@@ -455,7 +464,7 @@ function calcVisible(graph, xs, ys) {
             let tlayer = branch.to.layers[branch.to.layers.length-1];
             let gslayer = graph.layers.find(la => la.id===slayer);
             let gtlayer = graph.layers.find(la => la.id===tlayer);
-            return gslayer.applyBetweenFilter(branch.from) && gtlayer.applyBetweenFilter(branch.to);
+            return gslayer.applyBetweenFilter(branch) && gtlayer.applyBetweenFilter(branch);
         }).forEach(branchId => visibleSet.add(branchId));
     }
 
@@ -465,8 +474,8 @@ function calcVisible(graph, xs, ys) {
     let visibleMap = new Map();
     for(let branchId of visibleSet) {
         let branch = graph.edgeMap.get(branchId);
-        let source = branch.from;//.data.id;
-        let dest = branch.to;//.data.id;
+        let source = branch.from;
+        let dest = branch.to;
         let madeupkey =
             `(${source.position.x.toFixed(4)}, ${source.position.y.toFixed(4)}`+
             `-(${dest.position.x.toFixed(4)}, ${dest.position.y.toFixed(4)}`;

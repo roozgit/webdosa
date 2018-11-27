@@ -116,7 +116,6 @@ class LayerMgr {
     }
 
     selectRow(elem) {
-
         select('#tblLayerMgr')
             .selectAll('tr')
             .selectAll('td:nth-child(1), td:nth-child(2)')
@@ -124,7 +123,6 @@ class LayerMgr {
         select(elem).style('background-color', "#484848");
         select(elem.nextSibling).style('background-color', "#484848");
     }
-
 }
 
 function updateLayerView(layers) {

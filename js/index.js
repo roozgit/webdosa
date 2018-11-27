@@ -7,10 +7,9 @@ import {LayerMgr, updateLayerView} from './layers';
 import {Plotter} from './plotter';
 import {getJsonFromUrl} from "./util";
 
-
 let scWidgetWidth = 200;
 let detailWidth = 680;
-let infogWidth = 550;
+let infogWidth = 600;
 let height = 750;
 let widget, layerMgr, detail, aggregation, svgplots, hgraph;
 
@@ -80,12 +79,22 @@ dispatch.on('dragBoxPlot', function(newx, newy, marge) {
 
 dispatch.on('toggleLayer', function(layerId) {
     let layer = hgraph.layers.find(lay => lay.id===layerId);
-    layer.withinVisible = !layer.withinVisible;
-    layer.betweenVisible = !layer.betweenVisible;
-    if(!layer.withinVisible)
+    console.log(layerId, layer.totalVisibility);
+    layer.totalVisibility = !layer.totalVisibility;
+    if(!layer.totalVisibility) {
+        console.log("hiding");
         detail.hideNodes(layerId);
-    else
+        hgraph.layers.find(lay => lay.id === layerId)
+            .betweenVisible
+            .set('freeze', (x => !x.to.layers.includes(layerId) &&
+                !x.from.layers.includes(layerId)));
+        aggregation.removeLayerBox(layerId);
+    } else {
+        console.log("showing");
+        hgraph.layers.find(lay => lay.id === layerId)
+            .betweenVisible.delete('freeze');
         detail.showNodes(layerId);
+    }
 });
 
 dispatch.on('layerLabelUpdate', function(layerId) {
