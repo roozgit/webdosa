@@ -33,9 +33,17 @@ class Widget {
     createWidget(graph, group, tab) {
         let brushed = function() {
             let brushExt = d3.event.selection;
-            //let extents = brushExt.map(d => this.scaler(d));
+            let extents = brushExt.map(d => this.scaler(d));
             //console.log(this);
-            console.log(graph.layers.filter(d => d.selected)[0].id);
+            let layer = graph.layers.find(d => d.selected);
+            if(!layer) {
+                console.error("No layers selected. Widgets cannot continue");
+                return;
+            }
+            let filterFunc =
+                (x => x.features[this.feature] >= extents[0] && x.features[this.feature] <= extent[1]);
+
+            //graph.layers.withinVisible = x =>
         };
 
         for(let k of Object.keys(graph[group][0].features)) {

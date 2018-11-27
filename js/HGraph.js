@@ -46,15 +46,16 @@ class HGraph {
             this.edgeMap.set(e.data.id, e);
 
         });
-        this.layers.push({id:0, members: new Set([...this.nodeMap.keys()]),
-            label:"background", color: "lightgrey", selected: false,
-            nodesVisible: true, edgesVisible : false,
-            within: new Set(Array.from(this.edgeMap.keys())),
-            between : new Set(),
-            totalVisibility: false,
-            withinVisible: (x => false),
-            betweenVisible: (x => false)
-        });
+        this.layers.push(new Layer(0, //id
+            new Set([...this.nodeMap.keys()]),  //members
+            "background",  //label
+            "lightgrey",   //color
+            false, //selected
+            new Set(Array.from(this.edgeMap.keys())), //within edges
+            new Set(), //between edges
+            false,     //totalVisibility
+            [() => false], //withinFilters
+            [() => false])); //betweenFilters
     }
 
     removeEdges(nodeId, layer) {
@@ -127,13 +128,16 @@ class HGraph {
         let newLayerId = topLayerId + 1;
 
         this.layers.forEach(lay => lay.selected = false);
-        this.layers.push({id: newLayerId, members: new Set(), label: "layer-"+newLayerId,
-            color: this.colorScale(newLayerId-1), selected: true,
-            within : new Set(), between: new Set(),
-            totalVisibility: true,
-            withinVisible: (x => true),
-            betweenVisible: (x => true)});
-
+        this.layers.push(new Layer(newLayerId, //id
+            new Set(),  //members
+            "layer-"+newLayerId,  //label
+            this.colorScale(newLayerId-1),   //color
+            true, //selected
+            new Set(), //within edges
+            new Set(), //between edges
+            true,     //totalVisibility
+            [() => true], //withinFilters
+            [() => true])); //betweenFilters
         let newLayer = this.layers[this.layers.length-1];
         //let newLayerMembers = new Set();
         for(let nodeId of nodeIds) {
@@ -230,6 +234,22 @@ class HGraph {
         selectedLayer.selected = true;
     }
 
+}
+
+function Layer(id, members, label, color, selected, within, between, totalVisibility, withinVisible, betweenVisible) {
+    this.id = id;
+    this.members = members;
+    this.label = label;
+    this.color = color;
+    this.selected = selected;
+    this.within = within;
+    this.between = between;
+    this.totalVisibility = totalVisibility;
+    this.withinVisible = withinVisible;
+    this.betweenVisible = betweenVisible;
+
+    this.applyWithinFilter = x => withinVisible.every(filterFunc => filterFunc(x));
+    this.applyBetweenFilter = x => betweenVisible.every(filterFunc => filterFunc(x));
 }
 
 export {HGraph};

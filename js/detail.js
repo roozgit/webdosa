@@ -266,7 +266,7 @@ class Detail {
                              if(slayer==undefined)
                                  console.error("slayer is undefined: " + slayerId);
                              if(slayerId===0) results.add(d.data.id);
-                             else if(slayer.withinVisible(d))
+                             else if(slayer.applyWithinFilter(d))
                                      results.add(d.data.id);
                          }
                      } while (node = node.next);
@@ -445,7 +445,7 @@ function calcVisible(graph, xs, ys) {
     for(let lay of graph.layers) {
         for(let branchId of lay.within) {
             let branch = graph.edgeMap.get(branchId);
-            if(lay.withinVisible(branch.from) && lay.withinVisible(branch.to))
+            if(lay.applyWithinFilter(branch.from) && lay.applyWithinFilter(branch.to))
                 visibleSet.add(branchId);
         }
 
@@ -456,7 +456,7 @@ function calcVisible(graph, xs, ys) {
             let tlayer = branch.to.layers[branch.to.layers.length-1];
             let gslayer = graph.layers.find(la => la.id===slayer);
             let gtlayer = graph.layers.find(la => la.id===tlayer);
-            return gslayer.betweenVisible(branch.from) && gtlayer.betweenVisible(branch.to);
+            return gslayer.applyBetweenFilter(branch.from) && gtlayer.applyBetweenFilter(branch.to);
         }).forEach(branchId => visibleSet.add(branchId));
     }
 

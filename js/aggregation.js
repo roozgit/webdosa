@@ -148,7 +148,7 @@ class Aggregation {
 
     calcAggregates(graph, ffunc) {
         let layerData = graph.layers.filter(lay => lay.totalVisibility);
-        let withinAgg = layerData.map(lay => [lay.id, [...lay.within].filter(d => lay.withinVisible(d))])
+        let withinAgg = layerData.map(lay => [lay.id, [...lay.within].filter(d => lay.applyWithinFilter(d))])
             .map(wit => {
                 let dest = wit[0];
                 if(dest)
@@ -161,7 +161,7 @@ class Aggregation {
                 else return undefined;
             }).filter(arr => arr);
 
-        let betweenAgg = layerData.map(lay => [lay.id, [...lay.between].filter(d => lay.betweenVisible(d))])
+        let betweenAgg = layerData.map(lay => [lay.id, [...lay.between].filter(d => lay.applyBetweenFilter(d))])
             .map(wit => {
                 let betMap = new Map();
                 for(let d of wit[1]) {
@@ -172,7 +172,7 @@ class Aggregation {
                     let tlayerId = branch.to.layers[branch.to.layers.length-1];
                     if(tlayerId === wit[0]) continue;
                     let tlayer = graph.layers.find(lx => lx.id===tlayerId);
-                    if(tlayer.betweenVisible(branch.to)) {
+                    if(tlayer.applyBetweenFilter(branch.to)) {
                         let madeupId = slayerId+"-"+tlayerId;
                         betMap.has(madeupId) ?
                             betMap.set(madeupId, betMap.get(madeupId).concat([d])) :
