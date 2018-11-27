@@ -266,8 +266,7 @@ class Detail {
                              if(slayer==undefined)
                                  console.error("slayer is undefined: " + slayerId);
                              if(slayerId===0) results.add(d.data.id);
-                             else if(slayer.applyWithinFilter(d))
-                                     results.add(d.data.id);
+                             else if(slayer.totalVisibility) results.add(d.data.id);
                          }
                      } while (node = node.next);
                  }

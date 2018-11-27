@@ -33,17 +33,28 @@ class Widget {
     createWidget(graph, group, tab) {
         let brushed = function() {
             let brushExt = d3.event.selection;
-            let extents = brushExt.map(d => this.scaler(d));
-            //console.log(this);
+            let extents= [this.scaler.invert(0), this.scaler.invert(svgh-svgBotMargin)];
+            if(brushExt)
+                extents = brushExt.map(d => this.scaler.invert(d));
+
             let layer = graph.layers.find(d => d.selected);
             if(!layer) {
                 console.error("No layers selected. Widgets cannot continue");
                 return;
             }
-            let filterFunc =
-                (x => x.features[this.feature] >= extents[0] && x.features[this.feature] <= extent[1]);
+            let feat = this.feature;
+            let filterFunc = function(x) {
+                return x.features[feat] >= extents[0] &&
+                    x.features[feat] <= extents[1];
+            };
 
-            //graph.layers.withinVisible = x =>
+            if(this.group==="nodes")
+                layer.nodeVisible.set("nodes-"+this.feature, filterFunc);
+            else
+            {
+                layer.withinVisible.set("edges-"+this.feature, filterFunc);
+                layer.betweenVisible.set("edges-"+this.feature, filterFunc);
+            }
         };
 
         for(let k of Object.keys(graph[group][0].features)) {
@@ -103,7 +114,7 @@ class Widget {
             //brush creation for each chart
             let  brush = brushX()
                 .extent([[0, 0], [this[wwidth], svgh - svgBotMargin]])
-                .on("brush end", brushed.bind({group: group, feature: k, scaler: xs}));
+                .on("end", brushed.bind({group: group, feature: k, scaler: xs}));
 
             let brushGroup = chart.append('g')
                 .attr("class", "scentedBrush")
@@ -115,6 +126,7 @@ class Widget {
     }
 
     moveWidgetSelection(graph, layerId, featureX, featureY) {
+        return false;
         let layer = graph.layers.find(lay => lay.id===layerId);
         if(layer.members.size===0) return;
         let mfx = [...layer.members].map(mx => graph.nodeMap.get(mx).features[featureX]);
