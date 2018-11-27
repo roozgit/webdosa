@@ -263,7 +263,8 @@ class Detail {
                          if(selected) {
                              let slayerId = d.layers[d.layers.length-1];
                              let slayer = graph.layers.find(lay => lay.id===slayerId);
-                             if(slayer==undefined) console.error("slayer undefined: " + slayerId);
+                             if(slayer==undefined)
+                                 console.error("slayer is undefined: " + slayerId);
                              if(slayerId===0) results.add(d.data.id);
                              else if(slayer.withinVisible(d))
                                      results.add(d.data.id);
@@ -391,7 +392,7 @@ class Detail {
                 return graph.layers.find(lay => lay.id === nlayer).color;
             });
         this[edgeGroup].selectAll('path')
-            .filter(d=> removalObject.within.has(d.id) || removalObject.between.has(d.id))
+            .filter(d => removalObject.within.has(d.id) || removalObject.between.has(d.id))
             .remove();
      }
 

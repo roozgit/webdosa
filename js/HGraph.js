@@ -157,6 +157,7 @@ class HGraph {
                 let spIdx = tlayers.indexOf(layer);
                 tlayers.splice(spIdx, 1);
                 curNodes.delete(cnodeId);
+                //if(curLayer==undefined) console.log(cnodeId, layer);
                 this.removeEdges(cnodeId, curLayer);
                 let newLayer = this.layers.find(lay => lay.id ===tlayers[tlayers.length-1]);
                 newLayer.members.add(cnodeId);
@@ -173,7 +174,7 @@ class HGraph {
                 curNodes.add(nodeId);
                 this.addEdges(nodeId, curLayer);
                 this.layers[currentLayerIdx].members.delete(nodeId);
-                this.removeEdges(nodeId, this.layers[currentLayer]);
+                this.removeEdges(nodeId, this.layers[currentLayerIdx]);
             }
         }
     }
@@ -198,7 +199,26 @@ class HGraph {
             newNodeLayer.members.add(nodeId);
             this.addEdges(nodeId, newNodeLayer);
         }
+
         this.layers.splice(idx, 1);
+        for(let lidx = 0; lidx < this.layers.length; lidx++) {
+            let higherLayer = this.layers[lidx];
+            if(higherLayer.id < layerId) continue;
+            for(let nodeId of higherLayer.members) {
+                let nodeLayers = this.nodeMap.get(nodeId).layers;
+                let deletedLayerIdx = nodeLayers.indexOf(layerId);
+                if(deletedLayerIdx > -1) nodeLayers.splice(deletedLayerIdx, 1);
+                let vias = [];
+                let nAdjList = this.adjList.get(nodeId);
+                let nrAdjList = this.revAdjList.get(nodeId);
+                if(nAdjList) for(let adjItem of nAdjList) vias.push(...adjItem.via);
+                if(nrAdjList) for(let adjItem of nrAdjList) vias.push(...adjItem.via);
+                let badVias = vias.filter(d => d.from.layers[d.from.layers.length-1]===0 ||
+                    d.to.layers[d.to.layers.length-1]===0);
+                for(let d of badVias.map(d => d.data.id)) betweens.add(d);
+            }
+        }
+
         return {members: [...mems].map(dx => this.nodeMap.get(dx)),
             within: withins,
             between: betweens};
