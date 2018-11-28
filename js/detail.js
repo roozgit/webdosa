@@ -287,9 +287,9 @@ class Detail {
                  let slayer = d.branch.from.layers[d.branch.from.layers.length-1];
                  let tlayer = d.branch.to.layers[d.branch.to.layers.length-1];
                  if(slayer === tlayer) {
-                     let nsrc = graph.adjList.get(d.branch.from.data.id).length;
-                     let ntrgt = graph.revAdjList.get(d.branch.to.data.id).length;
-                     return hsl(graph.layers.find(la => la.id === slayer).color).brighter(Math.max(nsrc, ntrgt)/4);
+                     //let nsrc = graph.adjList.get(d.branch.from.data.id).length;
+                     //let ntrgt = graph.revAdjList.get(d.branch.to.data.id).length;
+                     return hsl(graph.layers.find(la => la.id === slayer).color).brighter(d.branch.features['flowMVA']/100);
                  }
                  else {
                      if(d.branch.from.position.x <=  d.branch.to.position.x) {
