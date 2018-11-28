@@ -8,6 +8,7 @@ import {dispatch} from './index';
 import {arcLinks, gradientGenerator} from './util';
 import {zoom} from "d3-zoom";
 import {hsl} from "d3-color";
+import * as Json2CSV from "json2csv";
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -88,6 +89,48 @@ class Detail {
             graph.nodes.forEach(n => n.position.y = n.features[feat]);
             redraw.call(this, true);
         });
+
+        //CSVJSON
+        d3.select('#detailControls')
+            .append('button')
+            .style("position", "relative")
+            .attr("id", "nodeCSV")
+            .text("Download Node Data(CSV)")
+            .on('click', () => {
+                let featureExpo = [...graph.layers.find(lay => lay.selected).members]
+                    .map(x => {
+                        let feat = graph.nodeMap.get(x).features;
+                        feat.id = x;
+                        return feat;
+                    });
+                const fields = Object.keys(featureExpo[0]);
+                const json2csvParser = new Json2CSV.Parser({ fields: fields, eol:"\n"});
+                console.log(json2csvParser);
+               const csv = json2csvParser.parse(featureExpo);
+                let wnd = window.open("about:blank", "", "_blank");
+                wnd.document.write(csv.split("\n").join("<br/>"));
+            });
+
+        d3.select('#detailControls')
+            .append('button')
+            .style("position", "relative")
+            .attr("id", "edgeCSV")
+            .text("download Edge Data(CSV)")
+            .on('click', () => {
+                let featureExpo = [...graph.layers.find(lay => lay.selected).within]
+                    .map(x => {
+                        let feat = graph.edgeMap.get(x).features;
+                        feat.id = x;
+                        return feat;
+                    });
+                const fields = Object.keys(featureExpo[0]);
+                const json2csvParser = new Json2CSV.Parser({ fields: fields ,eol : "\n"});
+                console.log(json2csvParser);
+                const csv = json2csvParser.parse(featureExpo);
+                console.log(csv);
+                let wnd = window.open("about:blank", "", "_blank");
+                wnd.document.write(csv.split("\n").join("<br/>"));
+            });
 
         function redraw(updateMode) {
             let xPos = graph.nodes.map(n => n.position.x);
