@@ -122,13 +122,16 @@ dispatch.on('pointDeHighlight' , function() {
 });
 
 dispatch.on('raiseLayer' , function(layerId) {
-    hgraph.raiseLayer(layerId);
+    let result = hgraph.raiseLayer(layerId);
+    if(!result) throw "Cannot raise this layer";
     for(let id of hgraph.layers.slice(1).map(lay => lay.id))
         detail.reBrush(id);
+    return result;
 });
 
 dispatch.on('lowerLayer' , function(layerId) {
-    hgraph.lowerLayer(layerId);
+    let result = hgraph.lowerLayer(layerId);
+    if(!result) throw "Cannot lower this layer";
     for(let id of hgraph.layers.slice(1).map(lay => lay.id))
         detail.reBrush(id);
 });

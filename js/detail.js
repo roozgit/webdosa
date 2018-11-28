@@ -404,7 +404,6 @@ class Detail {
          this[hidden].set(layerId, this[edgeGroup].selectAll('path')
              .filter(d => d.branch.from.layers[d.branch.from.layers.length-1]===layerId ||
                      d.branch.to.layers[d.branch.to.layers.length-1]===layerId).remove());
-         //dispatch.call('overviewUpdate');
      }
 
     showNodes(layerId) {
