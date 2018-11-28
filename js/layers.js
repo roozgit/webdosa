@@ -31,7 +31,7 @@ class LayerMgr {
         const eyeSlashIcon = icon({ prefix: 'fas', iconName: 'eye-slash' });
 
         let layer = graph.layers.find(la => la.id ===layerId);
-        let trow = this[tbl].append('tr')
+        let trow = this[tbl].insert('tr', "tr:first-child")
             .attr('id', "layer-"+layerId);
 
         //layer id -1
