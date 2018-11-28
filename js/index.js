@@ -101,8 +101,10 @@ dispatch.on('toggleBackground' , function() {
     hgraph.layers[0].totalVisibility = !hgraph.layers[0].totalVisibility;
     if(hgraph.layers[0].totalVisibility) {
         hgraph.layers[0].betweenVisible.set('base', () => true);
-    } else
+    } else {
         hgraph.layers[0].betweenVisible.set('base', () => false);
+        aggregation.removeLayerBox(0);
+    }
     for(let id of hgraph.layers.slice(1).map(lay => lay.id))
         detail.reBrush(id);
 });
