@@ -12,7 +12,9 @@ We are trying to implement this visualization system for browsers.
 : https://roozgit.github.io/webdosa?dataset=activsg 
 
 - [US Flights(incomplete)](http://stat-computing.org/dataexpo/2009/the-data.html):
-https://roozgit.github.io/webdosa?dataset=activsg  
+https://roozgit.github.io/webdosa?dataset=flight
+
+- Our test dataset: https://roozgit.github.io/webdosa?dataset=toy  
 
 ## Installation
 
