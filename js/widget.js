@@ -31,6 +31,8 @@ class Widget {
 
         this.createWidget(graph, 'nodes', this[widgetTab1]);
         this.createWidget(graph, 'edges', this[widgetTab2]);
+
+
     }
 
     createWidget(graph, group, tab) {

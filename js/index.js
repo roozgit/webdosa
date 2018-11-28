@@ -11,9 +11,9 @@ let scWidgetWidth = 200;
 let detailWidth = 680;
 let infogWidth = 600;
 let height = 750;
-let widget, layerMgr, detail, aggregation, svgplots, hgraph;
+let widget, layerMgr, detail, aggregation, hgraph;
 
-svgplots = new Map();
+const svgplots = new Map();
 
 const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'layerDeleted',
     'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot', 'toggleLayer', 'toggleBackground',

@@ -7,6 +7,7 @@ import {brush as d3brush, brushSelection} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks, gradientGenerator} from './util';
 import {zoom} from "d3-zoom";
+import {hsl} from "d3-color";
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -285,8 +286,11 @@ class Detail {
              .attr('stroke', d => {
                  let slayer = d.branch.from.layers[d.branch.from.layers.length-1];
                  let tlayer = d.branch.to.layers[d.branch.to.layers.length-1];
-                 if(slayer === tlayer)
-                     return graph.layers.find(la => la.id=== slayer).color;
+                 if(slayer === tlayer) {
+                     let nsrc = graph.adjList.get(d.branch.from.data.id).length;
+                     let ntrgt = graph.revAdjList.get(d.branch.to.data.id).length;
+                     return hsl(graph.layers.find(la => la.id === slayer).color).brighter(Math.max(nsrc, ntrgt)/4);
+                 }
                  else {
                      if(d.branch.from.position.x <=  d.branch.to.position.x) {
                          if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-lr`)
@@ -313,13 +317,15 @@ class Detail {
                  .data(visibleArr, d => d.id).enter()
                  .append('path')
                  .attr('id', d => d.id)
+                 //.attr('class', d => d.branch.classes)
                  .attr('d', d => d.path)
                  .attr('fill', "none")
                  .attr('stroke', d => {
                      let slayer = d.branch.from.layers[d.branch.from.layers.length-1];
                      let tlayer = d.branch.to.layers[d.branch.to.layers.length-1];
-                     if(slayer === tlayer)
-                         return graph.layers.find(la => la.id=== slayer).color;
+                     if(slayer === tlayer) {
+                         return graph.layers.find(la => la.id === slayer).color;
+                     }
                      else {
                          if(d.branch.from.position.x <=  d.branch.to.position.x) {
                              if(d3.select('#detailDefs').select(`#grad-${slayer}-${tlayer}-lr`)
