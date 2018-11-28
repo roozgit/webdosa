@@ -40,28 +40,36 @@ class Widget {
             if(sev.constructor.name === "y") {
                 if (!layer) {
                     console.error("No layers selected. Widgets cannot continue");
-                    return;
+                }
+                if(this.fixed) {
+
                 }
             } else {
-                layer.activatedFilters
-                    .add(this.group + "-" + this.feature);
-                //return;
+                let hasFilter = layer.activatedFilters.has(this.group + "-" + this.feature);
+                let wfun = this.mapper.get(this.group + "-" + this.feature);
+                if(hasFilter && wfun) {
+                    let brushExt = d3.event.selection;
+                    let extents = [wfun.scaler.invert(0), wfun.scaler.invert(svgh - svgBotMargin)];
+                    if (brushExt) extents = brushExt.map(d => wfun.scaler.invert(d));
+                    let feat= this.feature;
+                    let filterFunc = function(x) {
+                        return x.features[feat] >= extents[0] &&
+                            x.features[feat] <= extents[1];
+                    };
+                    if(this.group==="nodes")
+                        layer.nodeVisible.set("nodes-"+this.feature, filterFunc);
+                    else
+                    {
+                        layer.withinVisible.set("edges-"+this.feature, filterFunc);
+                        layer.betweenVisible.set("edges-"+this.feature, filterFunc);
+                    }
+                    wfun.fixed = true;
+                    wfun.fixedExtents = brushExt;
+                } else {
+                    layer.activatedFilters
+                        .add(this.group + "-" + this.feature);
+                }
             }
-            // let brushExt = d3.event.selection;
-            // let extents = [this.scaler.invert(0), this.scaler.invert(svgh - svgBotMargin)];
-            // if (brushExt) extents = brushExt.map(d => this.scaler.invert(d));
-            // let filterFunc = function(x) {
-            //     return x.features[feat] >= extents[0] &&
-            //         x.features[feat] <= extents[1];
-            // };
-            //
-            // if(this.group==="nodes")
-            //     layer.nodeVisible.set("nodes-"+this.feature, filterFunc);
-            // else
-            // {
-            //     layer.withinVisible.set("edges-"+this.feature, filterFunc);
-            //     layer.betweenVisible.set("edges-"+this.feature, filterFunc);
-            // }
         };
 
         for(let k of Object.keys(graph[group][0].features)) {
@@ -129,7 +137,15 @@ class Widget {
                 .attr('class', "widgetIcon")
                 .attr('x', 50)
                 .attr('y', svgh-svgBotMargin)
-                //.on('click', () => );
+                .on('click', function(a,b,el) {
+                    let cid = el[0].id;
+                    let gid = cid[1] + "-" + cid[2];
+                    let val = this[widgetMap].get(gid);
+                    if(val) {
+                        val.fixed = true;
+                        this[widgetMap].set(gid, val);
+                    }
+                }.bind(this));
             chart.append(function() {
                 return closeIcon['node'][0];
             }).attr('id', "closeIcon-"+ group + "-" + k)
@@ -140,20 +156,23 @@ class Widget {
                 .on('click', function() {
                     let cid = select(this).attr('id').split("-");
                     let gid = cid[1] + "-" + cid[2];
-                    graph.layers.find(lay => lay.selected).activatedFilters.delete(gid);
+                    let layerx = graph.layers.find(lay => lay.selected);
+                    layerx.activatedFilters.delete(gid);
+                    layerx.nodeVisible.delete(gid);
+                    //delete edge filters?
                 });
 
             //brush creation for each chart
             let  brush = brushX()
                 .extent([[0, 0], [this[wwidth], svgh - svgBotMargin]])
-                .on("end", brushed.bind({group: group, feature: k, scaler: xs}));
+                .on("end", brushed.bind({group: group, feature: k, mapper: this[widgetMap]}));
 
             let brushGroup = chart.append('g')
                 .attr("class", "scentedBrush")
                 .attr('id', "scentedBrush-" + group + "-" + k);
             brushGroup.call(brush);
-            this[widgetMap].set(group+"-"+k, {chart: chart, brushGroup: brushGroup,
-                brushFunc: brush, scaler: xs, graph: graph});
+            this[widgetMap].set(group+"-"+k, {brushGroup: brushGroup,
+                brushFunc: brush, scaler: xs, fixed: false, fixedExtents: []});
         }
     }
 
@@ -161,7 +180,10 @@ class Widget {
         let layer = graph.layers.find(lay => lay.id===layerId);
         if(layer.members.size===0) return;
         for(let brf of this[widgetMap].values())
-            brf.brushGroup.call(brf.brushFunc.move, [0,0]);
+            if(!brf.fixed)
+                brf.brushGroup.call(brf.brushFunc.move, [0,0]);
+            else
+                brf.brushGroup.call(brf.brushFunc.move, brf.fixedExtents);
         for(let filteredFeature of layer.activatedFilters) {
             let actualFeat = filteredFeature.split("-")[1];
             let mf = [...layer.members].map(mx => graph.nodeMap.get(mx).features[actualFeat]);
