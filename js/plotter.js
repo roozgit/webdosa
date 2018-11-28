@@ -1,7 +1,7 @@
 import d3 from 'd3-selection';
 import {scaleLinear} from "d3-scale";
 import {extent as d3extent} from "d3-array";
-import {area} from "d3-shape";
+import {area, line} from "d3-shape";
 import {dispatch} from "./index"
 
 let svg = Symbol();
@@ -78,7 +78,6 @@ class Plotter {
         switch(plottype) {
             case "scatter":
             case "bar":
-            case "line":
                 this[gplot].selectAll('*').remove();
                 this[gplot]
                     .selectAll('circle').data(pos).enter()
@@ -106,6 +105,17 @@ class Plotter {
                     .datum(pos)
                     .attr('d', area1)
                     .attr('fill', this[pcolor]);
+                break;
+            case "line":
+                pos.sort((a, b) => a[0]-b[0]);
+                this[gplot].selectAll('*').remove();
+                let line1 = line()
+                    .x(d => d[0])
+                    .y(d => d[1]);
+                this[gplot].append('path')
+                    .datum(pos)
+                    .attr('d', line1)
+                    .attr('stroke', this[pcolor]);
                 break;
         }
     }

@@ -1,4 +1,4 @@
-import d3, {select, selectAll} from 'd3-selection';
+import d3, {select} from 'd3-selection';
 import {histogram, extent as d3extent, max as d3max, range as d3range} from 'd3-array';
 import {scaleLinear} from "d3-scale";
 import {brushX} from "d3-brush";
