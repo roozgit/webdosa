@@ -246,6 +246,39 @@ class HGraph {
         selectedLayer.selected = true;
     }
 
+    raiseLayer(layerId) {
+        let layerIdx = this.layers.findIndex(lay => lay.id ===layerId);
+        if(layerIdx === this.layers.length-1) {
+            console.log('cannot raise this layer');
+            return false;
+        }
+        if(layerIdx ===0) {
+            console.log("cannot raise layer zero");
+            return false;
+        }
+        let temp = this.layers[layerIdx+1];
+        this.layers[layerIdx+1] = this.layers[layerIdx];
+        this.layers[layerIdx] = temp;
+        return true;
+    }
+
+    lowerLayer(layerId) {
+        let layerIdx = this.layers.findIndex(lay => lay.id ===layerId);
+        if(layerIdx === 1) {
+            console.log('cannot lower this layer');
+            return false;
+        }
+        if(layerIdx ===0) {
+            console.log("cannot lower layer zero");
+            return false;
+        }
+        let temp = this.layers[layerIdx-1];
+        this.layers[layerIdx-1] = this.layers[layerIdx];
+        this.layers[layerIdx] = temp;
+        return true;
+    }
+
+
 }
 
 function Layer(id, members, label, color, selected, within, between,

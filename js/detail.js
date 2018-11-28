@@ -3,7 +3,7 @@ import {max as d3max, extent} from 'd3-array';
 import {axisBottom, axisLeft} from 'd3-axis';
 import {quadtree} from 'd3-quadtree';
 import d3 from 'd3-selection';
-import {brush as d3brush} from 'd3-brush';
+import {brush as d3brush, brushSelection} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks, gradientGenerator} from './util';
 import {zoom} from "d3-zoom";
@@ -439,12 +439,12 @@ class Detail {
         ciel.remove();
     }
 
-    moveBrush(brushId) {
+    reBrush(brushId) {
         let bid = this[brushes].find(d => d.id === brushId);
-        let curext = bid.extent();
+        let parentG = this[gBrushes].select('#brush-'+brushId).node();
+        let curext = brushSelection(parentG);
         let actual = this[gBrushes]
             .select('#brush-'+brushId);
-        console.log(bid, curext, actual);
         actual.call(bid.brush.move, curext);
     }
 }

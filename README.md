@@ -36,7 +36,7 @@ default y axis is latitude (*lat*). The use can perform the following actions in
 To make brushing fast and efficient, the system uses a 
 [quadtree](https://github.com/d3/d3-quadtree) to index the nodes. This technique enables fast
 selections and enables the system support larger number of nodes. Each selection the user makes
-creates a new layer which translates directly to the [Overview](#(O)verview).
+creates a new layer which translates directly to the [Overview](#Overview).
 
 2. Change graph projection using other features. Dataset features are listed in two select boxed
 below the graph. After the user changes an axis projection feature, the system, rescales the
@@ -185,7 +185,6 @@ possible future uses.
 
 ## Application Design
 
-
 ### Module System
 
 The application is designed in a modular fashion using es6 modules. The whole application is loaded using 
@@ -205,7 +204,7 @@ There is still some shared state between the modules (graph data). But the appli
 designed in a way to make it easier to refactor each module and move towards a fully modular
 application.
 
-### Modules Description
+### Module Descriptions
 
 Following is a short explanation of each module ordered alphabetically:
 

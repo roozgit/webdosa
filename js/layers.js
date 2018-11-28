@@ -79,14 +79,22 @@ class LayerMgr {
             //layer raise -5
             let td5 = trow.append('td')
                 .on("click", function () {
-                    console.log("clicked me? up")
+                    dispatch.call('raiseLayer', null, layerId);
+                    let thisrow = select(this).node().parentNode;
+                    let previousrow = thisrow.previousSibling;
+                    document.getElementById('tblLayerMgr')
+                        .insertBefore(thisrow, previousrow);
                 });
             td5.node().appendChild(arrowUpIcon['node'][0]);
 
             //layer lower -6
             let td6 = trow.append('td')
                 .on("click", function () {
-                    console.log("clicked me? down")
+                    dispatch.call('lowerLayer', null, layerId);
+                    let thisrow = select(this).node().parentNode;
+                    let nextrow = thisrow.nextSibling;
+                    document.getElementById('tblLayerMgr')
+                        .insertBefore(nextrow, thisrow);
                 });
             td6.node().appendChild(arrowDownIcon['node'][0]);
 
@@ -126,10 +134,11 @@ class LayerMgr {
 }
 
 function updateLayerView(layers) {
+    let len = layers.length-1;
     select('#tblLayerMgr').selectAll('tr')
         .each(function(_, i) {
             select(this).select('td:nth-child(3)')
-                .text(layers[i].members.size);
+                .text(layers[len - i].members.size);
         });
 }
 

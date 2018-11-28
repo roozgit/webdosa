@@ -17,7 +17,7 @@ svgplots = new Map();
 
 const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'layerDeleted',
     'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot', 'toggleLayer', 'layerLabelUpdate',
-    'pointHighlight', 'pointDeHighlight');
+    'pointHighlight', 'pointDeHighlight', 'raiseLayer', 'lowerLayer');
 
 //Register events and design workflow in a series of callbacks here
 dispatch.on('dataLoad', function(graph) {
@@ -108,6 +108,18 @@ dispatch.on('pointHighlight' , function(pid) {
 
 dispatch.on('pointDeHighlight' , function() {
     detail.deHighlight();
+});
+
+dispatch.on('raiseLayer' , function(layerId) {
+    hgraph.raiseLayer(layerId);
+    for(let id of hgraph.layers.slice(1).map(lay => lay.id))
+        detail.reBrush(id);
+});
+
+dispatch.on('lowerLayer' , function(layerId) {
+    hgraph.lowerLayer(layerId);
+    for(let id of hgraph.layers.slice(1).map(lay => lay.id))
+        detail.reBrush(id);
 });
 
 export {dispatch};
