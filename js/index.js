@@ -16,8 +16,8 @@ let widget, layerMgr, detail, aggregation, svgplots, hgraph;
 svgplots = new Map();
 
 const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'layerDeleted',
-    'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot', 'toggleLayer', 'layerLabelUpdate',
-    'pointHighlight', 'pointDeHighlight', 'raiseLayer', 'lowerLayer');
+    'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot', 'toggleLayer', 'toggleBackground',
+    'layerLabelUpdate', 'pointHighlight', 'pointDeHighlight', 'raiseLayer', 'lowerLayer');
 
 //Register events and design workflow in a series of callbacks here
 dispatch.on('dataLoad', function(graph) {
@@ -96,6 +96,17 @@ dispatch.on('toggleLayer', function(layerId) {
         detail.showNodes(layerId);
     }
 });
+
+dispatch.on('toggleBackground' , function() {
+    hgraph.layers[0].totalVisibility = !hgraph.layers[0].totalVisibility;
+    if(hgraph.layers[0].totalVisibility) {
+        hgraph.layers[0].betweenVisible.set('base', () => true);
+    } else
+        hgraph.layers[0].betweenVisible.set('base', () => false);
+    for(let id of hgraph.layers.slice(1).map(lay => lay.id))
+        detail.reBrush(id);
+});
+
 
 dispatch.on('layerLabelUpdate', function(layerId) {
    svgplots.get(layerId).setLabel(hgraph.layers.find(lay => lay.id===layerId).label);

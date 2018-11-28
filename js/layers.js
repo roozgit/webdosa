@@ -97,23 +97,30 @@ class LayerMgr {
                         .insertBefore(nextrow, thisrow);
                 });
             td6.node().appendChild(arrowDownIcon['node'][0]);
-
-            //layer visible -7
-            let td7 = trow.append('td')
-                .on("click", function () {
-                    dispatch.call('toggleLayer', this, layerId);
-                    let attr = td7.select('svg').attr('data-icon');
-                    td7.node().removeChild(td7.node().childNodes[0]);
-                    if(attr === "eye") {
-                        td7.node().appendChild(eyeSlashIcon.node[0]);
-                    } else {
-                        td7.node().appendChild(eyeIcon.node[0]);
-                    }
-                });
-            td7.node().appendChild(eyeIcon['node'][0]);
         }
 
-        this.selectRow(td1.node());
+        //layer visible -7
+        let td7 = trow.append('td')
+            .on("click", function () {
+                if(layerId > 0) {
+                    dispatch.call('toggleLayer', this, layerId);
+                } else {
+                    dispatch.call('toggleBackground', null);
+                }
+                let attr = td7.select('svg').attr('data-icon');
+                td7.node().removeChild(td7.node().childNodes[0]);
+                if (attr === "eye") {
+                    td7.node().appendChild(eyeSlashIcon.node[0]);
+                } else {
+                    td7.node().appendChild(eyeIcon.node[0]);
+                }
+            });
+        if(layerId > 0)
+            td7.node().appendChild(eyeIcon['node'][0]);
+        else
+            td7.node().appendChild(eyeSlashIcon['node'][0]);
+
+        //this.selectRow(td1.node());
     }
 
     selectRowById(id) {

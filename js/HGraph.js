@@ -241,6 +241,7 @@ class HGraph {
     }
 
     selectLayer(layerId) {
+        if(layerId === 0) return false;
         this.layers.forEach(la => la.selected = false);
         let selectedLayer = this.layers.find(la => la.id===layerId);
         selectedLayer.selected = true;
