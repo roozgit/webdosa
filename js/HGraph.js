@@ -56,7 +56,9 @@ class HGraph {
             false,     //totalVisibility
             new Map([['base', () => false]]), //withinFilters
             new Map([['base', () => false]]), //betweenFilters
-            new Map([['base', () => false]]) //nodeFilters
+            new Map([['base', () => false]]), //nodeFilters,
+            "lng",
+            "lat"
             ));
 
     }
@@ -126,7 +128,7 @@ class HGraph {
         //     [...layer.between].map(ed => [this.edgeMap.get(ed).from.layers.slice(-1)[0], this.edgeMap.get(ed).to.layers.slice(-1)[0]]));
     }
 
-    addLayer(nodeIds) {
+    addLayer(nodeIds, prx, pry) {
         let topLayerId = d3max(this.layers.map(la => la.id));
         let newLayerId = topLayerId + 1;
 
@@ -141,7 +143,9 @@ class HGraph {
             true,     //totalVisibility
             new Map([['base', () => true]]), //withinFilters
             new Map([['base', () => true]]), //betweenFilters
-            new Map([['base', () => true]]) //nodeFilters
+            new Map([['base', () => true]]), //nodeFilters
+            prx,  //projected feature X
+            pry   //projected feature Y
         ));
         let newLayer = this.layers[this.layers.length-1];
         for(let nodeId of nodeIds) {
@@ -166,7 +170,12 @@ class HGraph {
                 tlayers.splice(spIdx, 1);
                 curNodes.delete(cnodeId);
                 this.removeEdges(cnodeId, curLayer);
-                let newLayer = this.layers.find(lay => lay.id ===tlayers[tlayers.length-1]);
+                let newLayerIdx = this.layers.findIndex(lay => lay.id ===tlayers[tlayers.length-1]);
+                let newLayer= this.layers[newLayerIdx];
+                while (!newLayer.canTakeNode(this.nodeMap.get(cnodeId)) && newLayerIdx > 0) {
+                    newLayerIdx--;
+                    newLayer = this.layers[newLayerIdx];
+                }
                 newLayer.members.add(cnodeId);
                 this.addEdges(cnodeId, newLayer);
             }
@@ -176,7 +185,7 @@ class HGraph {
             let allNodeLayers = this.nodeMap.get(nodeId).layers;
             let currentLayer = allNodeLayers[allNodeLayers.length - 1];
             let currentLayerIdx = this.layers.findIndex(lay => lay.id===currentLayer);
-            if(currentLayerIdx < curnIdx) {
+            if(currentLayerIdx < curnIdx && curLayer.canTakeNode(this.nodeMap.get(nodeId))) {
                 allNodeLayers.push(layer);
                 curNodes.add(nodeId);
                 this.addEdges(nodeId, curLayer);
@@ -240,7 +249,8 @@ class HGraph {
 }
 
 function Layer(id, members, label, color, selected, within, between,
-               totalVisibility, withinVisible, betweenVisible, nodeVisible) {
+               totalVisibility, withinVisible, betweenVisible, nodeVisible,
+               projectedX, projectedY) {
     this.id = id;
     this.members = members;
     this.label = label;
@@ -252,6 +262,9 @@ function Layer(id, members, label, color, selected, within, between,
     this.withinVisible = withinVisible;
     this.betweenVisible = betweenVisible;
     this.nodeVisible = nodeVisible;
+    this.projectedX = projectedX;
+    this.projectedY = projectedY;
+    this.activatedFilters = new Set();
 
     this.applyWithinFilter = x => [...this.withinVisible].map(f => f[1]).every(filterFunc => filterFunc(x));
     this.applyBetweenFilter = x => [...this.betweenVisible].map(f =>f[1]).every(filterFunc => filterFunc(x));

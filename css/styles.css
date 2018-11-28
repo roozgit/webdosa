@@ -89,3 +89,7 @@ pre {
     white-space:pre-line;
     /*word-break: keep-all*/
 }
+
+.widgetIcon {
+    color: lightgrey;
+}

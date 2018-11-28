@@ -1,7 +1,10 @@
-import d3, {select} from 'd3-selection';
+import d3, {select, selectAll} from 'd3-selection';
 import {histogram, extent as d3extent, max as d3max, range as d3range} from 'd3-array';
 import {scaleLinear} from "d3-scale";
 import {brushX} from "d3-brush";
+import {icon, library as flibrary} from "@fortawesome/fontawesome-svg-core";
+import {faScrewdriver} from '@fortawesome/free-solid-svg-icons';
+import {faTimes} from '@fortawesome/free-solid-svg-icons';
 
 let widgetTab1 = Symbol();
 let widgetTab2 = Symbol();
@@ -32,29 +35,33 @@ class Widget {
 
     createWidget(graph, group, tab) {
         let brushed = function() {
-            let brushExt = d3.event.selection;
-            let extents= [this.scaler.invert(0), this.scaler.invert(svgh-svgBotMargin)];
-            if(brushExt)
-                extents = brushExt.map(d => this.scaler.invert(d));
-
+            let sev = d3.event.sourceEvent;
             let layer = graph.layers.find(d => d.selected);
-            if(!layer) {
-                console.error("No layers selected. Widgets cannot continue");
-                return;
+            if(sev.constructor.name === "y") {
+                if (!layer) {
+                    console.error("No layers selected. Widgets cannot continue");
+                    return;
+                }
+            } else {
+                layer.activatedFilters
+                    .add(this.group + "-" + this.feature);
+                //return;
             }
-            let feat = this.feature;
-            let filterFunc = function(x) {
-                return x.features[feat] >= extents[0] &&
-                    x.features[feat] <= extents[1];
-            };
-
-            if(this.group==="nodes")
-                layer.nodeVisible.set("nodes-"+this.feature, filterFunc);
-            else
-            {
-                layer.withinVisible.set("edges-"+this.feature, filterFunc);
-                layer.betweenVisible.set("edges-"+this.feature, filterFunc);
-            }
+            // let brushExt = d3.event.selection;
+            // let extents = [this.scaler.invert(0), this.scaler.invert(svgh - svgBotMargin)];
+            // if (brushExt) extents = brushExt.map(d => this.scaler.invert(d));
+            // let filterFunc = function(x) {
+            //     return x.features[feat] >= extents[0] &&
+            //         x.features[feat] <= extents[1];
+            // };
+            //
+            // if(this.group==="nodes")
+            //     layer.nodeVisible.set("nodes-"+this.feature, filterFunc);
+            // else
+            // {
+            //     layer.withinVisible.set("edges-"+this.feature, filterFunc);
+            //     layer.betweenVisible.set("edges-"+this.feature, filterFunc);
+            // }
         };
 
         for(let k of Object.keys(graph[group][0].features)) {
@@ -110,6 +117,31 @@ class Widget {
                 .attr('dy',"-0.5em")
                 .text(k)
                 .style('fill', "grey");
+            flibrary.add(faScrewdriver);
+            flibrary.add(faTimes);
+            const screwIcon = icon({ prefix: 'fas', iconName: 'screwdriver'});
+            const closeIcon = icon({ prefix: 'fas', iconName: 'times' });
+
+            chart.append(function() {
+                return screwIcon['node'][0];
+            }).attr('id', "screwIcon-"+ group + "-" + k)
+                .attr('viewBox', "0 0 2048 2048")
+                .attr('class', "widgetIcon")
+                .attr('x', 50)
+                .attr('y', svgh-svgBotMargin)
+                //.on('click', () => );
+            chart.append(function() {
+                return closeIcon['node'][0];
+            }).attr('id', "closeIcon-"+ group + "-" + k)
+                .attr('viewBox', "0 0 2048 2048")
+                .attr('class', "widgetIcon")
+                .attr('x', 75)
+                .attr('y', svgh-svgBotMargin)
+                .on('click', function() {
+                    let cid = select(this).attr('id').split("-");
+                    let gid = cid[1] + "-" + cid[2];
+                    graph.layers.find(lay => lay.selected).activatedFilters.delete(gid);
+                });
 
             //brush creation for each chart
             let  brush = brushX()
@@ -120,31 +152,27 @@ class Widget {
                 .attr("class", "scentedBrush")
                 .attr('id', "scentedBrush-" + group + "-" + k);
             brushGroup.call(brush);
-
-            this[widgetMap].set(group+"-"+k, {chart: chart, brushGroup: brushGroup, brushFunc: brush, scaler: xs});
+            this[widgetMap].set(group+"-"+k, {chart: chart, brushGroup: brushGroup,
+                brushFunc: brush, scaler: xs, graph: graph});
         }
     }
 
-    moveWidgetSelection(graph, layerId, featureX, featureY) {
-        return false;
+    paintLayerBrushes(graph, layerId) {
         let layer = graph.layers.find(lay => lay.id===layerId);
         if(layer.members.size===0) return;
-        let mfx = [...layer.members].map(mx => graph.nodeMap.get(mx).features[featureX]);
-        let mfxe = d3extent(mfx);
-        let mfy = [...layer.members].map(mx => graph.nodeMap.get(mx).features[featureY]);
-        let mfye = d3extent(mfy);
-
-        let targetWidgetX = this[widgetMap].get('nodes-'+featureX);
-        targetWidgetX.brushGroup.call(targetWidgetX.brushFunc.move,
-            [targetWidgetX.scaler(mfxe[0]), targetWidgetX.scaler(mfxe[1])]);
-
-        let targetWidgetY = this[widgetMap].get('nodes-'+featureY);
-        targetWidgetY.brushGroup.call(targetWidgetY.brushFunc.move,
-            [targetWidgetY.scaler(mfye[0]), targetWidgetY.scaler(mfye[1])]);
-
-        targetWidgetX.brushGroup.select('rect.selection').attr('fill', layer.color);
-        targetWidgetY.brushGroup.select('rect.selection').attr('fill', layer.color);
+        for(let brf of this[widgetMap].values())
+            brf.brushGroup.call(brf.brushFunc.move, [0,0]);
+        for(let filteredFeature of layer.activatedFilters) {
+            let actualFeat = filteredFeature.split("-")[1];
+            let mf = [...layer.members].map(mx => graph.nodeMap.get(mx).features[actualFeat]);
+            let mfe = d3extent(mf);
+            let targetWidget = this[widgetMap].get(filteredFeature);
+            targetWidget.brushGroup.select('rect.selection').attr('fill', layer.color);
+            targetWidget.brushGroup.call(targetWidget.brushFunc.move,
+                [targetWidget.scaler(mfe[0]), targetWidget.scaler(mfe[1])]);
+        }
     }
+
 
     fillInfo(pid, nodeData) {
         let par = select('div#widgets #tab-3-content');

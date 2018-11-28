@@ -197,7 +197,7 @@ class Detail {
              layerId = +d3.select(this).attr('id').split("-")[1];
              newBrushFlag = d3max(curBrushes.map(bru => bru.id)) < layerId + 1;
              if(newBrushFlag)
-                 dispatch.call('layerAdded', {'layerId': layerId}, new Set());
+                 dispatch.call('layerAdded', null, new Set(), layerId, this[featureX], this[featureY]);
          }
 
          function brushed() {
@@ -207,7 +207,7 @@ class Detail {
              this[nodeIds] = search(this[points], this[quadTree],
                  extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
 
-             dispatch.call('layerMoved', this, {layer: layerId, nodeIds: this[nodeIds],
+             dispatch.call('layerMoved', this, {layerId: layerId, nodeIds: this[nodeIds],
                  featureX: this[featureX], featureY: this[featureY]});
              let visibleArr = calcVisible(graph, xs, ys);
              this.updateExitEnter(visibleArr, graph);

@@ -36,17 +36,17 @@ dispatch.on('dataLoad', function(graph) {
         infogWidth, height, {top: 10, right: 10, bottom: 10, left: 10});
 });
 
-dispatch.on('layerAdded', function(selectedIds) {
-    hgraph.addLayer(selectedIds);
-    layerMgr.addLayer(hgraph, +this['layerId']);
+dispatch.on('layerAdded', function(selectedIds, layerId, fx, fy) {
+    hgraph.addLayer(selectedIds, fx, fy);
+    layerMgr.addLayer(hgraph, +layerId);
 });
 
 dispatch.on('layerMoved', function(selectedIds) {
-    hgraph.updateLayer(selectedIds.layer, selectedIds.nodeIds);
-    hgraph.selectLayer(selectedIds.layer);
-    updateLayerView(hgraph.layers, selectedIds.layer);
-    layerMgr.selectRowById(selectedIds.layer);
-    widget.moveWidgetSelection(hgraph, selectedIds.layer, selectedIds.featureX, selectedIds.featureY);
+    hgraph.updateLayer(selectedIds.layerId, selectedIds.nodeIds);
+    hgraph.selectLayer(selectedIds.layerId);
+    updateLayerView(hgraph.layers, selectedIds.layerId);
+    layerMgr.selectRowById(selectedIds.layerId);
+    widget.paintLayerBrushes(hgraph, selectedIds.layerId);
 });
 
 dispatch.on('layerDeleted', function(layerId) {
