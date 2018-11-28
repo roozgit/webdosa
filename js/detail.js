@@ -1,5 +1,5 @@
 import {scaleLinear} from 'd3-scale';
-import {max as d3max, extent} from 'd3-array';
+import {max as d3max, sum as d3sum, extent} from 'd3-array';
 import {axisBottom, axisLeft} from 'd3-axis';
 import {quadtree} from 'd3-quadtree';
 import d3 from 'd3-selection';
@@ -287,9 +287,10 @@ class Detail {
                  let slayer = d.branch.from.layers[d.branch.from.layers.length-1];
                  let tlayer = d.branch.to.layers[d.branch.to.layers.length-1];
                  if(slayer === tlayer) {
-                     //let nsrc = graph.adjList.get(d.branch.from.data.id).length;
-                     //let ntrgt = graph.revAdjList.get(d.branch.to.data.id).length;
-                     return hsl(graph.layers.find(la => la.id === slayer).color).brighter(d.branch.features['flowMVA']/100);
+                     let nsrc = d3sum(graph.adjList.get(d.branch.from.data.id).map(nod => nod.via.length));
+                     let ntrgt = d3sum(graph.revAdjList.get(d.branch.to.data.id).map(nod => nod.via.length));
+                     return hsl(graph.layers.find(la => la.id === slayer).color)
+                         .brighter(3*(nsrc + ntrgt) / graph.maxDegTunk);
                  }
                  else {
                      if(d.branch.from.position.x <=  d.branch.to.position.x) {
