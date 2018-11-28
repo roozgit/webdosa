@@ -14,7 +14,7 @@ We are trying to implement this visualization system for browsers.
 - [US Flights(incomplete)](http://stat-computing.org/dataexpo/2009/the-data.html):
 https://roozgit.github.io/webdosa?dataset=activsg  
 
-### Installation
+## Installation
 
 Just clone the repository or download the zip file and extract it to a folder. Then change
 directory to that folder; once inside the folder, type:
@@ -105,7 +105,7 @@ The user can hover on the points in the small scatterplot inside the overview to
 those points in the detail; in addition, all the data associated with that point is displayed
 in the Info tab.
 
-### Data Format
+## Data Format
 
 The system can accept any dataset similar to the following JSON which represents a graph
 with two nodes and one edge between them:
@@ -183,10 +183,10 @@ create ambiguities during execution.
 - `data` and `classes` objects are not currently used in the system. These are there for
 possible future uses.
 
-### Application Design
+## Application Design
 
 
-#### Module System
+### Module System
 
 The application is designed in a modular fashion using es6 modules. The whole application is loaded using 
 [unpkg's getlib](https://www.npmjs.com/package/getlibs) and therefore requires a working
@@ -195,7 +195,7 @@ dependencies are managed using npm through package.json to ensure that they are 
 up-to-date. The developer does not need to worry about updating this application explicitly
 at all.
 
-#### Coordinated Views Design
+### Coordinated Views Design
 
 The application heavily uses [d3-dispatch](https://github.com/d3/d3-dispatch) for
 inter-module communication. Almost no module directly manipulates the objects belonging to
@@ -205,7 +205,7 @@ There is still some shared state between the modules (graph data). But the appli
 designed in a way to make it easier to refactor each module and move towards a fully modular
 application.
 
-#### Modules Description
+### Modules Description
 
 Following is a short explanation of each module ordered alphabetically:
 
