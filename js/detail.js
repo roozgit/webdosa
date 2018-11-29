@@ -233,11 +233,11 @@ class Detail {
          this[brushes].push({id: brushMaxId + 1, brush: brush});
          let curBrushes = this[brushes];
          let newBrushFlag = false;
-         let brushingFlag = false;
+         //let brushingFlag = false;
          let layerId = 0;
 
          function brushStart() {
-             brushingFlag = false;
+             //brushingFlag = false;
              layerId = +d3.select(this).attr('id').split("-")[1];
              newBrushFlag = d3max(curBrushes.map(bru => bru.id)) < layerId + 1;
              if(newBrushFlag)
@@ -245,7 +245,7 @@ class Detail {
          }
 
          function brushed() {
-             brushingFlag = true;
+             //brushingFlag = true;
              let extent = d3.event.selection;
 
              this[nodeIds] = search(this[points], this[quadTree],
@@ -269,20 +269,6 @@ class Detail {
          }
 
          function emitData() {
-             // //special case
-             if(!brushingFlag && newBrushFlag) {
-                 graph.layers.pop();
-                 curBrushes.pop();
-                 let tbl = document.getElementById("tblLayerMgr");
-                 for (let r = 0; r < tbl.rows.length; r++) {
-                     let rid = tbl.rows[r].cells[0].textContent;
-                     if (layerId === +rid) {
-                         tbl.rows[r].remove();
-                         break;
-                     }
-                 }
-                 return;
-             }
              let bru = d3.select(`#brush-${layerId}`);
              bru.selectAll('rect.handle')
                  .attr('fill', graph.layers.find(la => la.id===layerId).color)
