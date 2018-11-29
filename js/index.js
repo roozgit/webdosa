@@ -51,7 +51,8 @@ dispatch.on('layerMoved', function(selectedIds) {
 
 dispatch.on('layerDeleted', function(layerId) {
     let result = hgraph.deleteLayer(layerId);
-    layerMgr.selectRowById(hgraph.layers.find(lay => lay.selected).id);
+    let selectedLayer = hgraph.layers.find(lay => lay.selected);
+    layerMgr.selectRowById(selectedLayer ? selectedLayer.id : 0);
     detail.removeBrush(layerId, result, hgraph);
     aggregation.removeLayerBox(layerId);
 });

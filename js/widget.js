@@ -43,10 +43,11 @@ class Widget {
                 if (!layer) {
                     console.error("No layers selected. Widgets cannot continue");
                 }
-                if(this.fixed) {
-
-                }
+                // if(this.fixed) {
+                //
+                // }
             } else {
+                //if(!this.fixed) return;
                 let hasFilter = layer.activatedFilters.has(this.group + "-" + this.feature);
                 let wfun = this.mapper.get(this.group + "-" + this.feature);
                 if(hasFilter && wfun) {
@@ -181,11 +182,17 @@ class Widget {
     paintLayerBrushes(graph, layerId) {
         let layer = graph.layers.find(lay => lay.id===layerId);
         if(layer.members.size===0) return;
-        for(let brf of this[widgetMap].values())
-            if(!brf.fixed)
-                brf.brushGroup.call(brf.brushFunc.move, [0,0]);
-            else
+        for(let abrf of this[widgetMap]) {
+            let brf= abrf[1];
+            let keyn = abrf[0];
+            if (!brf.fixed)
+                brf.brushGroup.call(brf.brushFunc.move, [0, 0]);
+            else {
                 brf.brushGroup.call(brf.brushFunc.move, brf.fixedExtents);
+                select('#screwIcon-'+keyn).selectAll('path')
+                    .attr('fill',layer.color);
+            }
+        }
         for(let filteredFeature of layer.activatedFilters) {
             let actualFeat = filteredFeature.split("-")[1];
             let mf = [...layer.members].map(mx => graph.nodeMap.get(mx).features[actualFeat]);

@@ -43,13 +43,6 @@ class Plotter {
         this[gplot] = this[svg].append('g')
             .attr('class', "clipperPath")
             .attr('transform', `translate(${plotMargin}, ${plotMargin})`);
-
-        // this[svg].append('line')
-        //     .attr('x1', plotMargin)
-        //     .attr('y1', this.pheight - plotMargin)
-        //     .attr('x2', this.pwidth - plotMargin)
-        //     .attr('y2', this.pheight - plotMargin)
-        //     .attr('stroke', this[pcolor]);
     }
 
     plot(gdata, label, featureX, featureY, plottype) {
@@ -66,7 +59,6 @@ class Plotter {
 
         let xext = d3extent(fx);
         let yext = d3extent(fy);
-        console.log(xext, yext);
 
         this[scaleX] = scaleLinear().domain(d3extent(fx)).range([0, this.pwidth-2*plotMargin]);
         this[scaleY] = scaleLinear().domain(d3extent(fy)).range([this.pheight-2*plotMargin, 0]);
