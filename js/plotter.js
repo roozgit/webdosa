@@ -33,9 +33,9 @@ class Plotter {
             .attr('height', this.pheight);
 
         this[plabel] = this[svg].append('text')
-            .attr('x', this.pwidth /2 - plotMargin)
+            .attr('x', this.pwidth /2 + plotMargin)
             .attr('y', 0)
-            .attr('dx', "-3.5em")
+            .attr('dx', "+1.5em")
             .attr('dy', "1em")
             .text(label)
             .style('fill', color);
@@ -53,7 +53,6 @@ class Plotter {
     }
 
     plot(gdata, label, featureX, featureY, plottype) {
-
         let featureNames = Object.keys(gdata[0].features);
         if(!featureX || !featureNames.includes(featureX)) featureX = "index";
         if(!featureY || !featureNames.includes(featureY)) featureY = "index";
@@ -65,6 +64,10 @@ class Plotter {
         let fy = gdata.map(d => +d.features[featureY]);
         let ids = gdata.map(d => d.data.id);
 
+        let xext = d3extent(fx);
+        let yext = d3extent(fy);
+        console.log(xext, yext);
+
         this[scaleX] = scaleLinear().domain(d3extent(fx)).range([0, this.pwidth-2*plotMargin]);
         this[scaleY] = scaleLinear().domain(d3extent(fy)).range([this.pheight-2*plotMargin, 0]);
 
@@ -74,11 +77,13 @@ class Plotter {
         let pos = posx.map((d, i) => {
             return [d, posy[i], ids[i]];
         });
+        this[gplot].selectAll('*').remove();
+        this[svg].select('g#axis').remove();
 
         switch(plottype) {
             case "scatter":
             case "bar":
-                this[gplot].selectAll('*').remove();
+                this[svg].selectAll('text.tLabel').remove();
                 this[gplot]
                     .selectAll('circle').data(pos).enter()
                     .append('circle')
@@ -118,6 +123,7 @@ class Plotter {
                     .attr('stroke', this[pcolor]);
                 break;
         }
+        this.createAxis(xext, yext)
     }
 
     moveTo(x, y) {
@@ -126,6 +132,56 @@ class Plotter {
 
     setLabel(labelText) {
         this[plabel].text(labelText);
+    }
+
+    createAxis(xext, yext) {
+        let axis = this[svg].append('g').attr('id', "axis");
+        axis.append('text')
+            .attr('x', plotMargin)
+            .attr('y', this.pheight - plotMargin)
+            .attr('dy', "1em")
+            .attr('font-size', ".5em")
+            .text(xext[0].toFixed(1))
+            .style('fill', this[pcolor]);
+        axis.append('text')
+            .attr('x', this.pwidth - plotMargin)
+            .attr('y', this.pheight - plotMargin)
+            .attr('dx', "-2.5em")
+            .attr('dy', "1em")
+            .attr('font-size', ".5em")
+            .text(xext[1].toFixed(1))
+            .style('fill', this[pcolor]);
+
+        axis.append('text')
+            .attr('x', plotMargin)
+            .attr('y', this.pheight - plotMargin)
+            .attr('dx', "-1em")
+            .attr('dy', "1em")
+            .attr('transform', `rotate(90,${plotMargin}, ${this.pwidth-plotMargin})`)
+            .attr('font-size', ".5em")
+            .text(yext[0].toFixed(1))
+            .style('fill', this[pcolor]);
+        axis.append('text')
+            .attr('x', plotMargin)
+            .attr('dx', "-1em")
+            .attr('dy', "1em")
+            .attr('transform', `rotate(90,${plotMargin}, ${plotMargin})`)
+            .attr('y', plotMargin)
+            .attr('font-size', ".5em")
+            .text(yext[1].toFixed(1))
+            .style('fill', this[pcolor]);
+        axis.append('line')
+            .attr('x1', plotMargin)
+            .attr('y1', plotMargin)
+            .attr('x2', plotMargin)
+            .attr('y2', this.pheight - plotMargin)
+            .attr('stroke', this[pcolor]);
+        axis.append('line')
+            .attr('x1', plotMargin)
+            .attr('y1', this.pheight - plotMargin)
+            .attr('x2', this.pwidth - plotMargin)
+            .attr('y2', this.pheight - plotMargin)
+            .attr('stroke', this[pcolor]);
     }
 }
 
