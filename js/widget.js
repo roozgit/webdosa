@@ -31,27 +31,21 @@ class Widget {
 
         this.createWidget(graph, 'nodes', this[widgetTab1]);
         this.createWidget(graph, 'edges', this[widgetTab2]);
-
-
     }
 
     createWidget(graph, group, tab) {
         let brushed = function() {
             let sev = d3.event.sourceEvent;
             let layer = graph.layers.find(d => d.selected);
+            let brushExt = d3.event.selection;
             if(sev.constructor.name === "y") {
                 if (!layer) {
                     console.error("No layers selected. Widgets cannot continue");
                 }
-                // if(this.fixed) {
-                //
-                // }
             } else {
-                //if(!this.fixed) return;
                 let hasFilter = layer.activatedFilters.has(this.group + "-" + this.feature);
                 let wfun = this.mapper.get(this.group + "-" + this.feature);
                 if(hasFilter && wfun) {
-                    let brushExt = d3.event.selection;
                     let extents = [wfun.scaler.invert(0), wfun.scaler.invert(svgh - svgBotMargin)];
                     if (brushExt) extents = brushExt.map(d => wfun.scaler.invert(d));
                     let feat= this.feature;
@@ -61,16 +55,14 @@ class Widget {
                     };
                     if(this.group==="nodes")
                         layer.nodeVisible.set("nodes-"+this.feature, filterFunc);
-                    else
-                    {
+                    else {
                         layer.withinVisible.set("edges-"+this.feature, filterFunc);
                         layer.betweenVisible.set("edges-"+this.feature, filterFunc);
                     }
                     wfun.fixed = true;
                     wfun.fixedExtents = brushExt;
                 } else {
-                    layer.activatedFilters
-                        .add(this.group + "-" + this.feature);
+                    layer.activatedFilters.add(this.group + "-" + this.feature);
                 }
             }
         };
@@ -139,16 +131,16 @@ class Widget {
                 .attr('viewBox', "0 0 2048 2048")
                 .attr('class', "widgetIcon")
                 .attr('x', 50)
-                .attr('y', svgh-svgBotMargin)
-                .on('click', function(a,b,el) {
-                    let cid = el[0].id;
-                    let gid = cid[1] + "-" + cid[2];
-                    let val = this[widgetMap].get(gid);
-                    if(val) {
-                        val.fixed = true;
-                        this[widgetMap].set(gid, val);
-                    }
-                }.bind(this));
+                .attr('y', svgh-svgBotMargin);
+                // .on('click', function(a,b,el) {
+                //     let cid = el[0].id;
+                //     let gid = cid[1] + "-" + cid[2];
+                //     let val = this[widgetMap].get(gid);
+                //     if(val) {
+                //         val.fixed = true;
+                //         this[widgetMap].set(gid, val);
+                //     }
+                // }.bind(this));
             chart.append(function() {
                 return closeIcon['node'][0];
             }).attr('id', "closeIcon-"+ group + "-" + k)
@@ -156,13 +148,18 @@ class Widget {
                 .attr('class', "widgetIcon")
                 .attr('x', 75)
                 .attr('y', svgh-svgBotMargin)
-                .on('click', function() {
-                    let cid = select(this).attr('id').split("-");
+                .on('click', (a, b, el) => {
+                    let cid = el[0].id.split("-");
                     let gid = cid[1] + "-" + cid[2];
                     let layerx = graph.layers.find(lay => lay.selected);
                     layerx.activatedFilters.delete(gid);
                     layerx.nodeVisible.delete(gid);
-                    //delete edge filters?
+                    let wfun = this[widgetMap].get(gid);
+                    wfun.fixed = false;
+                    select('#screwIcon-'+gid).selectAll('path')
+                        .attr('fill',"white");
+                    select('#scentedBrush-'+gid).select('.selection')
+                        .attr('width', 0);
                 });
 
             //brush creation for each chart
@@ -182,28 +179,23 @@ class Widget {
     paintLayerBrushes(graph, layerId) {
         let layer = graph.layers.find(lay => lay.id===layerId);
         if(layer.members.size===0) return;
-        for(let abrf of this[widgetMap]) {
-            let brf= abrf[1];
-            let keyn = abrf[0];
-            if (!brf.fixed)
-                brf.brushGroup.call(brf.brushFunc.move, [0, 0]);
-            else {
-                brf.brushGroup.call(brf.brushFunc.move, brf.fixedExtents);
-                select('#screwIcon-'+keyn).selectAll('path')
-                    .attr('fill',layer.color);
-            }
-        }
         for(let filteredFeature of layer.activatedFilters) {
             let actualFeat = filteredFeature.split("-")[1];
             let mf = [...layer.members].map(mx => graph.nodeMap.get(mx).features[actualFeat]);
             let mfe = d3extent(mf);
             let targetWidget = this[widgetMap].get(filteredFeature);
+            select('#screwIcon-'+filteredFeature).selectAll('path')
+                .attr('fill',layer.color);
             targetWidget.brushGroup.select('rect.selection').attr('fill', layer.color);
-            targetWidget.brushGroup.call(targetWidget.brushFunc.move,
-                [targetWidget.scaler(mfe[0]), targetWidget.scaler(mfe[1])]);
+            if(targetWidget.fixed) {
+                targetWidget.brushGroup.call(targetWidget.brushFunc.move,
+                    targetWidget.fixedExtents);
+            } else {
+                targetWidget.brushGroup.call(targetWidget.brushFunc.move,
+                    [targetWidget.scaler(mfe[0]), targetWidget.scaler(mfe[1])]);
+            }
         }
     }
-
 
     fillInfo(pid, nodeData) {
         let par = select('div#widgets #tab-3-content');

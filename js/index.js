@@ -129,7 +129,7 @@ dispatch.on('raiseLayer' , function(layerId) {
     if(!result) throw "Cannot raise this layer";
     for(let id of hgraph.layers.slice(1).map(lay => lay.id))
         detail.reBrush(id);
-    return result;
+    layerMgr.updateOverview(hgraph);
 });
 
 dispatch.on('lowerLayer' , function(layerId) {
@@ -137,6 +137,7 @@ dispatch.on('lowerLayer' , function(layerId) {
     if(!result) throw "Cannot lower this layer";
     for(let id of hgraph.layers.slice(1).map(lay => lay.id))
         detail.reBrush(id);
+    layerMgr.updateOverview(hgraph);
 });
 
 export {dispatch};
