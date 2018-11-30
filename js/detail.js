@@ -237,7 +237,6 @@ class Detail {
          let layerId = 0;
 
          function brushStart() {
-             //brushingFlag = false;
              layerId = +d3.select(this).attr('id').split("-")[1];
              newBrushFlag = d3max(curBrushes.map(bru => bru.id)) < layerId + 1;
              if(newBrushFlag)
@@ -245,7 +244,6 @@ class Detail {
          }
 
          function brushed() {
-             //brushingFlag = true;
              let extent = d3.event.selection;
 
              this[nodeIds] = search(this[points], this[quadTree],
@@ -476,7 +474,13 @@ class Detail {
 
     reBrush(brushId) {
         let bid = this[brushes].find(d => d.id === brushId);
-        let parentG = this[gBrushes].select('#brush-'+brushId).node();
+        let parentBrush = this[gBrushes].select('#brush-'+brushId);
+        let pbclass =parentBrush.attr('class').split("-");
+        let projectedx = pbclass[1];
+        if(projectedx !== this[featureX]) return;
+        let projectedy = pbclass[2];
+        if(projectedy !== this[featureY]) return;
+        let parentG = parentBrush.node();
         let curext = brushSelection(parentG);
         let actual = this[gBrushes]
             .select('#brush-'+brushId);

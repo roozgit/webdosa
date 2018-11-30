@@ -66,11 +66,11 @@ class Aggregation {
 
         d3.select('#svgAggregation').insert('defs', "g")
             .attr('id', "aggDefs");
-        d3.select('#aggDefs').append("clipPath")
-            .attr("id", "aggClip")
-            .append("rect")
-            .attr("width", boxWidth - 2 * plotMargin)
-            .attr("height", boxWidth - 2 * plotMargin);
+        // d3.select('#aggDefs').append("clipPath")
+        //     .attr("id", "aggClip")
+        //     .append("rect")
+        //     .attr("width", boxWidth - 2 * plotMargin)
+        //     .attr("height", boxWidth - 2 * plotMargin);
 
         this[swidth] = width;
         this[sheight] = height;
@@ -234,16 +234,7 @@ class Aggregation {
 
                 d3.select('#linker').selectAll('path')
                     .filter(d => d.source.id === item.data()[0].id || d.target.id === item.data()[0].id)
-                    .attr('d', d => {
-                        let sx = +d.source.x + d.displacement.dx1;
-                        let sy = +d.source.y + d.displacement.dy1;
-                        let tx = +d.target.x + d.displacement.dx2;
-                        let ty = +d.target.y + d.displacement.dy2;
-                        if(d.source.x===d.target.x && d.source.y===d.target.y)
-                            return ellipticalArc(sx, sy, tx, ty, boxWidth, boxWidth/2, boxWidth/2, d.displacement.dir);
-                        else
-                            return arcLinks(sx,sy,tx,ty,1,quadSep);
-                    })
+                    .attr('d', d => this.pathCreator(d))
                     .attr('stroke-width', d => this[edgeScaler](Math.abs(d.value)));
                 pathUpdater();
             }.bind(this));
@@ -275,21 +266,13 @@ class Aggregation {
                 .data(allArr, d => d.source.id + "-" + d.target.id);
 
             boln.exit().remove();
-            boln.attr('stroke-width', d => this[edgeScaler](Math.abs(d.value)));
+            boln.attr('stroke-width', d => this[edgeScaler](Math.abs(d.value)))
+                .attr('d', d => this.pathCreator(d));
             boln.enter()
                 .append('path')
                 .attr('id', d => "bigPath-" + d.source.id + "-" + d.target.id )
                 .attr('class', "arrows")
-                .attr('d', d => {
-                    let sx = +d.source.x + d.displacement.dx1;
-                    let sy = +d.source.y + d.displacement.dy1;
-                    let tx = +d.target.x + d.displacement.dx2;
-                    let ty = +d.target.y + d.displacement.dy2;
-                    if(d.source.x===d.target.x && d.source.y===d.target.y)
-                        return ellipticalArc(sx, sy, tx, ty, boxWidth, boxWidth/2, boxWidth/2, d.displacement.dir);
-                    else
-                        return arcLinks(sx,sy,tx,ty,1,quadSep);
-                })
+                .attr('d', d => this.pathCreator(d))
                 .attr("stroke-width", d => this[edgeScaler](Math.abs(d.value)))
                 .attr("fill", "none")
                 .attr("stroke", d => {
@@ -424,6 +407,19 @@ class Aggregation {
                     plotType: d3.select('#agPlotType').node().value
                 }, d);
         });
+    }
+
+    pathCreator(d) {
+        let sx = +d.source.x + d.displacement.dx1;
+        let sy = +d.source.y + d.displacement.dy1;
+        let tx = +d.target.x + d.displacement.dx2;
+        let ty = +d.target.y + d.displacement.dy2;
+        if(d.source.x===d.target.x && d.source.y===d.target.y)
+            return ellipticalArc(sx, sy,
+                tx,ty - this[edgeScaler](Math.abs(d.value)) / 2,
+                boxWidth, boxWidth / 2, boxWidth / 2, d.displacement.dir);
+        else
+            return arcLinks(sx,sy,tx,ty,1,quadSep);
     }
 
 }

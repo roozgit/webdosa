@@ -35,7 +35,7 @@ class Plotter {
         this[plabel] = this[svg].append('text')
             .attr('x', this.pwidth /2 + plotMargin)
             .attr('y', 0)
-            .attr('dx', "+1.5em")
+            .attr('dx', "+.75em")
             .attr('dy', "1em")
             .text(label)
             .style('fill', color);
