@@ -184,12 +184,12 @@ class Widget {
             let mf = [...layer.members].map(mx => graph.nodeMap.get(mx).features[actualFeat]);
             let mfe = d3extent(mf);
             let targetWidget = this[widgetMap].get(filteredFeature);
-            select('#screwIcon-'+filteredFeature).selectAll('path')
-                .attr('fill',layer.color);
             targetWidget.brushGroup.select('rect.selection').attr('fill', layer.color);
             if(targetWidget.fixed) {
                 targetWidget.brushGroup.call(targetWidget.brushFunc.move,
                     targetWidget.fixedExtents);
+                select('#screwIcon-'+filteredFeature).selectAll('path')
+                    .attr('fill',layer.color);
             } else {
                 targetWidget.brushGroup.call(targetWidget.brushFunc.move,
                     [targetWidget.scaler(mfe[0]), targetWidget.scaler(mfe[1])]);

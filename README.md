@@ -93,11 +93,11 @@ The initial selection is not important; it only tells the system that this widge
 activated. After this action, When the user moves the selection around, the corresponding 
 widget also shows the *extent* of values within that selection.
 
-2. To reverse filtering direction, the user can click on the small screwdriver icon below the 
-widget (note that this only works if the widget has been already activated). After this
-action, it is the widget that controls the detail; when the user moves the selection around
-in the detail, only nodes that satisfy the created filters are picked up and added to the 
-selection.
+2. If the user brushes again in the same widget, reverse filtering is
+activated. After this action, moving the layer selection in the detail 
+window will only pick up the nodes that the fixed filter allows. The user 
+becomes aware of this situation because a small screwdriver icon below the 
+widget changes its color to the designated color of the layer.
 
 3. The user can click on the close icon (X) to remove the filtering from the widget.
 
