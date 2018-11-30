@@ -17,7 +17,7 @@ const svgplots = new Map();
 
 const dispatch = dispatcher.dispatch('dataLoad', 'layerAdded', 'layerMoved', 'layerDeleted',
     'overviewUpdate', 'createBoxPlot', 'updateBoxPlot', 'dragBoxPlot', 'toggleLayer', 'toggleBackground',
-    'layerLabelUpdate', 'pointHighlight', 'pointDeHighlight', 'raiseLayer', 'lowerLayer');
+    'layerLabelUpdate', 'pointHighlight', 'pointDeHighlight', 'raiseLayer', 'lowerLayer', 'widgetTurnOff');
 
 //Register events and design workflow in a series of callbacks here
 dispatch.on('dataLoad', function(graph) {
@@ -129,7 +129,8 @@ dispatch.on('raiseLayer' , function(layerId) {
     if(!result) throw "Cannot raise this layer";
     for(let id of hgraph.layers.slice(1).map(lay => lay.id))
         detail.reBrush(id);
-    layerMgr.updateOverview(hgraph);
+    aggregation.updateOverview(hgraph);
+    updateLayerView(hgraph.layers);
 });
 
 dispatch.on('lowerLayer' , function(layerId) {
@@ -137,7 +138,15 @@ dispatch.on('lowerLayer' , function(layerId) {
     if(!result) throw "Cannot lower this layer";
     for(let id of hgraph.layers.slice(1).map(lay => lay.id))
         detail.reBrush(id);
-    layerMgr.updateOverview(hgraph);
+    aggregation.updateOverview(hgraph);
+    updateLayerView(hgraph.layers);
+});
+
+dispatch.on('widgetTurnOff', function() {
+    for(let id of hgraph.layers.slice(1).map(lay => lay.id))
+        detail.reBrush(id);
+    aggregation.updateOverview(hgraph);
+    updateLayerView(hgraph.layers);
 });
 
 export {dispatch};

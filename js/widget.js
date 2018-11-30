@@ -5,6 +5,7 @@ import {brushX} from "d3-brush";
 import {icon, library as flibrary} from "@fortawesome/fontawesome-svg-core";
 import {faScrewdriver} from '@fortawesome/free-solid-svg-icons';
 import {faTimes} from '@fortawesome/free-solid-svg-icons';
+import {dispatch} from './index';
 
 let widgetTab1 = Symbol();
 let widgetTab2 = Symbol();
@@ -132,15 +133,7 @@ class Widget {
                 .attr('class', "widgetIcon")
                 .attr('x', 50)
                 .attr('y', svgh-svgBotMargin);
-                // .on('click', function(a,b,el) {
-                //     let cid = el[0].id;
-                //     let gid = cid[1] + "-" + cid[2];
-                //     let val = this[widgetMap].get(gid);
-                //     if(val) {
-                //         val.fixed = true;
-                //         this[widgetMap].set(gid, val);
-                //     }
-                // }.bind(this));
+
             chart.append(function() {
                 return closeIcon['node'][0];
             }).attr('id', "closeIcon-"+ group + "-" + k)
@@ -155,11 +148,14 @@ class Widget {
                     layerx.activatedFilters.delete(gid);
                     layerx.nodeVisible.delete(gid);
                     let wfun = this[widgetMap].get(gid);
+                    let isFixed = wfun.fixed;
                     wfun.fixed = false;
                     select('#screwIcon-'+gid).selectAll('path')
                         .attr('fill',"white");
                     select('#scentedBrush-'+gid).select('.selection')
                         .attr('width', 0);
+                    if(isFixed)
+                        dispatch.call('widgetTurnOff');
                 });
 
             //brush creation for each chart
