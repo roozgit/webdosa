@@ -23,13 +23,13 @@ let plotTypes = Symbol();
 const quadSep = 60;
 const boxWidth = 150;
 const displacementSelf = [
-    {dx1 : boxWidth, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : 0, dir: "1,0", arrowRot: 180},
-    {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : 0, dir: "1,1"},
-    {dx1 : boxWidth, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,1"},
-    {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,0"}];
+    {dx1 : boxWidth, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : 0, dir: "1,0", sgn : -1},
+    {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : 0, dir: "1,1", sgn : -1},
+    {dx1 : boxWidth, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,1", sgn : 1},
+    {dx1 : 0, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth, dir: "1,0", sgn : 1}];
 
 const displacementBetween =
-    {dx1 : boxWidth/2, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth/2, dir: "1,0"};
+    {dx1 : boxWidth/2, dy1 : boxWidth/2, dx2 : boxWidth/2, dy2 : boxWidth/2, dir: "1,0" , sgn : 1};
 
 function markerGenerator(color, mid) {
     let tmarker = d3.select('#aggDefs')
@@ -316,7 +316,7 @@ class Aggregation {
             this[boxLinks].selectAll('path').filter(d => d.source.id!==d.target.id)
                 .each(function(d) {
                     paths.set(d.source.id + "-" + d.target.id,
-                        {pathBreak: samples(d3.select(this).node(), 12), pathData: d});
+                        {pathBreak: samples(d3.select(this).node(), 10), pathData: d});
                     d3.select(this).remove();
                 });
             for(let pat of paths) {
@@ -327,7 +327,7 @@ class Aggregation {
                 let isec2 = intersect(pat[1].pathBreak, rects.get(+b2));
                 let newpat =
                 (isec1 && isec2) ?
-                    arcLinks(isec1[0],isec1[1], isec2[0], isec2[1], 1, quadSep) : undefined;
+                    arcLinks(isec1[0], isec1[1], isec2[0], isec2[1], 1, quadSep) : undefined;
                 this[boxLinks].selectAll('path').filter(d => d.id === "bigPath-"+pat[0]).remove();
                 if(newpat)
                     this[boxLinks].append('path')
@@ -416,7 +416,7 @@ class Aggregation {
         let ty = +d.target.y + d.displacement.dy2;
         if(d.source.x===d.target.x && d.source.y===d.target.y)
             return ellipticalArc(sx, sy,
-                tx,ty - this[edgeScaler](Math.abs(d.value)) / 2,
+                tx,ty + d.displacement.sgn * this[edgeScaler](Math.abs(d.value)) / 2,
                 boxWidth, boxWidth / 2, boxWidth / 2, d.displacement.dir);
         else
             return arcLinks(sx,sy,tx,ty,1,quadSep);

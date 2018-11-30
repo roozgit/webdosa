@@ -124,8 +124,8 @@ function intersect(points, rect) {
             break;
         }
     }
-    if(forward) return points[i];
-    else if(backward) return points[j];
+    if(forward) return points[i+1];
+    else if(backward) return points[j-1];
     else return undefined;
 }
 

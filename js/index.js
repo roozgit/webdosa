@@ -70,8 +70,9 @@ dispatch.on('createBoxPlot', function(layerData, rectangle) {
 
 dispatch.on('updateBoxPlot', function(layerData) {
     let mdata = [...layerData.members].map(x => hgraph.nodeMap.get(x));
-    if(mdata && mdata.length > 0)
-        svgplots.get(this.id).plot(mdata, layerData.label, this.featureX, this.featureY, this.plotType);
+    //if(mdata && mdata.length > 0)
+    svgplots.get(this.id).plot(mdata, layerData.label, this.featureX, this.featureY, this.plotType);
+
 });
 
 dispatch.on('dragBoxPlot', function(newx, newy, marge) {

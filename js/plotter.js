@@ -46,6 +46,12 @@ class Plotter {
     }
 
     plot(gdata, label, featureX, featureY, plottype) {
+        if(gdata.length === 0) {
+            this[gplot].selectAll('*').remove();
+            this[svg].select('g#axis').remove();
+            return;
+        }
+
         let featureNames = Object.keys(gdata[0].features);
         if(!featureX || !featureNames.includes(featureX)) featureX = "index";
         if(!featureY || !featureNames.includes(featureY)) featureY = "index";
