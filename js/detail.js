@@ -448,7 +448,7 @@ class Detail {
             .style('visibility', "visible");
         let cbrush = this[brushes].find(bru => bru.id === layerId);
         cbrush.brush.filter(function () {
-            return !event.button;
+            return !d3.event.button;
         });
         for(let node of this[hidden].get(layerId).nodes())
         this[edgeGroup].append(function() {
