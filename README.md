@@ -16,13 +16,11 @@ We are trying to implement this visualization system for browsers.
 - [US Flights](http://stat-computing.org/dataexpo/2009/the-data.html):
 https://roozgit.github.io/webdosa?dataset=flight
 
-- [10 yrs of Australia Open Tennis games]
+- Ten yrs of Australia Open Tennis games
 https://roozgit.github.io/webdosa?dataset=tennis
 
 - [Test Dataset]
 https://roozgit.github.io/webdosa?dataset=toy
-
-- Our test dataset: https://roozgit.github.io/webdosa?dataset=toy  
 
 ## Installation
 
@@ -132,15 +130,15 @@ with two nodes and one edge between them:
             "dataField3":187
          },
          "features":{
-            "lat":44.883333,
-            "lng":-93.216944,
+            "lat":44.88,
+            "lng":-93.21,
            "feature1" : 1,
            "feature2" :2,
            "feature3" :3
          },
          "position":{
-            "x":-93.216944,
-            "y":-44.883333
+            "x":-93.24,
+            "y":-44.88
          }
       },
       {
@@ -152,15 +150,15 @@ with two nodes and one edge between them:
                   "dataField3":187
                },
                "features":{
-                  "lat":54.883333,
-                  "lng":-13.216944,
+                  "lat":54.88,
+                  "lng":-13.21,
                  "feature1" : 1,
                  "feature2" :2,
                  "feature3" :3
                },
                "position":{
-                  "x":-13.216944,
-                  "y":54.883333
+                  "x":-13.21,
+                  "y":54.83
                }
             }
    ],
@@ -188,7 +186,7 @@ A few things to consider if you are planning to convert your dataset to this for
 create IDs for HTML element. These IDs usually look like : `SomeString-feature1-feature2`.
 This ID is then used by various elements in the system. To extract useful information, 
 Javascript `string.split("-")` function is used. Therefore, the use of dash character can
-create ambiguities during execution.
+create ambiguities during execution, and is discouraged.
 
 - `data` and `classes` objects are not currently used in the system. These are there for
 possible future uses.
