@@ -167,12 +167,14 @@ class HGraph {
         for (let cnodeId of curNodes) {
             if (!nodeIds.has(cnodeId)) {
                 let tlayers = this.nodeMap.get(cnodeId).layers;
+                console.log(tlayers);
                 let spIdx = tlayers.indexOf(layer);
                 tlayers.splice(spIdx, 1);
                 curNodes.delete(cnodeId);
                 this.removeEdges(cnodeId, curLayer);
                 let newLayerIdx = this.layers.findIndex(lay => lay.id === tlayers[tlayers.length - 1]);
                 let newLayer = this.layers[newLayerIdx];
+                console.log(newLayerIdx);
                 while (!newLayer.canTakeNode(this.nodeMap.get(cnodeId)) && newLayerIdx > 0) {
                     newLayerIdx--;
                     newLayer = this.layers[newLayerIdx];
