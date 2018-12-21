@@ -276,7 +276,7 @@ class HGraph {
             console.log("cannot lower layer zero");
             return false;
         }
-        let temp = this.layers[layerIdx - 1];
+        let temp = this.layers[layerIdx];
         this.layers[layerIdx - 1] = this.layers[layerIdx];
         this.layers[layerIdx] = temp;
         return true;
