@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Web DOSA</title>
+    <meta name="CSE 578 Course Project" content="SPA implementation of Detail-Overview-Selection-Aggregation visualization system">
+    <meta name="author" content="Roozbeh Khodadadeh">
+
+  <script type="module" crossorigin src="/webdosa/assets/index-B7Dr9U3b.js"></script>
+  <link rel="stylesheet" crossorigin href="/webdosa/assets/index-Z7bMIB47.css">
+</head>
+
+<body>
+<div class="column">
+    <div id="controlCol" class="col2">
+        <div id="widgets" class="tabs">
+            <div class="tab">
+                <input type="radio" id="tab-1" name="tab-group-1" checked>
+                <label for="tab-1">Nodes</label>
+                <div id="tab-1-content" class="content"></div>
+            </div>
+
+            <div class="tab">
+                <input type="radio" id="tab-2" name="tab-group-1">
+                <label for="tab-2">Edges</label>
+                <div id = "tab-2-content" class="content"></div>
+            </div>
+
+            <div class="tab">
+                <input type="radio" id="tab-3" name="tab-group-1">
+                <label for="tab-3">Info</label>
+                <div id = "tab-3-content" class="content"></div>
+            </div>
+
+        </div>
+        <div id="layerMgr"></div>
+    </div>
+
+    <div id="detailCol" class="col2">
+        <div id="detail"></div>
+        <div id="detailControls"></div>
+    </div>
+    <div id="infographicCol" class="col2">
+        <div id="infographic" class="col3"></div>
+        <div id="aggControls"></div>
+    </div>
+
+</div>
+</body>
+</html>
