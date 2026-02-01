@@ -1,4 +1,4 @@
-import d3 from 'd3-selection';
+import * as d3 from 'd3-selection';
 import {scaleLinear} from "d3-scale";
 import {extent as d3extent} from "d3-array";
 import {area, line} from "d3-shape";

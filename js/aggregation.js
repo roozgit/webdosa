@@ -1,5 +1,5 @@
-import d3 from 'd3-selection';
-import {arcLinks, ellipticalArc, gradientGenerator, insideRect, intersect, samples} from "./util";
+import * as d3 from 'd3-selection';
+import {arcLinks, ellipticalArc, gradientGenerator, intersect, samples} from "./util";
 import {drag} from "d3-drag";
 import {dispatch} from './index';
 import {scaleLog} from "d3-scale";

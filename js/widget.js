@@ -1,4 +1,5 @@
-import d3, {select} from 'd3-selection';
+import * as d3 from 'd3-selection';
+import {select} from 'd3-selection';
 import {histogram, extent as d3extent, max as d3max, range as d3range} from 'd3-array';
 import {scaleLinear} from "d3-scale";
 import {brushX} from "d3-brush";
@@ -125,9 +126,18 @@ class Widget {
             flibrary.add(faTimes);
             const screwIcon = icon({ prefix: 'fas', iconName: 'screwdriver'});
             const closeIcon = icon({ prefix: 'fas', iconName: 'times' });
+            const iconNode = (faIcon) => {
+                if (faIcon && faIcon.node && faIcon.node[0]) return faIcon.node[0];
+                if (faIcon && faIcon.html && faIcon.html.length) {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(faIcon.html.join(''), 'image/svg+xml');
+                    return document.importNode(doc.documentElement, true);
+                }
+                return document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            };
 
             chart.append(function() {
-                return screwIcon['node'][0];
+                return iconNode(screwIcon);
             }).attr('id', "screwIcon-"+ group + "-" + k)
                 .attr('viewBox', "0 0 2048 2048")
                 .attr('class', "widgetIcon")
@@ -135,7 +145,7 @@ class Widget {
                 .attr('y', svgh-svgBotMargin);
 
             chart.append(function() {
-                return closeIcon['node'][0];
+                return iconNode(closeIcon);
             }).attr('id', "closeIcon-"+ group + "-" + k)
                 .attr('viewBox', "0 0 2048 2048")
                 .attr('class', "widgetIcon")

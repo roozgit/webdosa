@@ -2,13 +2,13 @@ import {scaleLinear} from 'd3-scale';
 import {max as d3max, sum as d3sum, extent} from 'd3-array';
 import {axisBottom, axisLeft} from 'd3-axis';
 import {quadtree} from 'd3-quadtree';
-import d3 from 'd3-selection';
+import * as d3 from 'd3-selection';
 import {brush as d3brush, brushSelection} from 'd3-brush';
 import {dispatch} from './index';
 import {arcLinks, gradientGenerator} from './util';
 import {zoom} from "d3-zoom";
 import {hsl} from "d3-color";
-import * as Json2CSV from "json2csv";
+import Papa from "papaparse";
 
 let svg = Symbol();
 let nodeGroup = Symbol();
@@ -104,9 +104,7 @@ class Detail {
                         return feat;
                     });
                 const fields = Object.keys(featureExpo[0]);
-                const json2csvParser = new Json2CSV.Parser({ fields: fields, eol:"\n"});
-                console.log(json2csvParser);
-               const csv = json2csvParser.parse(featureExpo);
+                const csv = Papa.unparse(featureExpo, {columns: fields, header: true, newline: "\n"});
                 let wnd = window.open("about:blank", "", "_blank");
                 wnd.document.write(csv.split("\n").join("<br/>"));
             });
@@ -124,9 +122,7 @@ class Detail {
                         return feat;
                     });
                 const fields = Object.keys(featureExpo[0]);
-                const json2csvParser = new Json2CSV.Parser({ fields: fields ,eol : "\n"});
-                console.log(json2csvParser);
-                const csv = json2csvParser.parse(featureExpo);
+                const csv = Papa.unparse(featureExpo, {columns: fields, header: true, newline: "\n"});
                 console.log(csv);
                 let wnd = window.open("about:blank", "", "_blank");
                 wnd.document.write(csv.split("\n").join("<br/>"));

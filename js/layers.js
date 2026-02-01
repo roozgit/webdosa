@@ -1,4 +1,5 @@
-import d3, {select} from 'd3-selection';
+import * as d3 from 'd3-selection';
+import {select} from 'd3-selection';
 import {dispatch} from './index';
 import {icon, library as flibrary} from "@fortawesome/fontawesome-svg-core";
 import {faTrash} from '@fortawesome/free-solid-svg-icons';
